@@ -29,7 +29,7 @@ jobs:
     - name: Install TAtouScan
       run: |
         pip install .
-        tatouscan -h
+        tatouscan --help
 
     - name: Lint with flake8
       run: |
