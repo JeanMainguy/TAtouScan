@@ -4,6 +4,10 @@ import typer
 from typing_extensions import Annotated
 
 from tatouscan import __version__
+from rich.logging import RichHandler
+import logging
+
+logger = logging.getLogger(__name__)
 
 app = typer.Typer(
     help="TatouScan: A tool for identifying toxin-antitoxin (TA) systems."
@@ -26,9 +30,19 @@ def main(
         ),
     ] = None,
 ):
+
+    # Set up logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        datefmt="[%X]",
+        handlers=[RichHandler()],
+    )
+
     """Main entry point for TatouScan CLI."""
     typer.echo(
-        "TatouScan CLI is under development. Run `tatouscan --help` for available commands."
+        "TatouScan CLI is under development. Run `tatouscan --help` for available commands.",
+        color=True,
     )
 
 
