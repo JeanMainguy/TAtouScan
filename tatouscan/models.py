@@ -24,7 +24,6 @@ class Gene:
         contig: Optional[Contig] = None,
     ):
         self.name = name
-        self.contig = contig
         self.coordinates = coordinates
 
     def __repr__(self):
