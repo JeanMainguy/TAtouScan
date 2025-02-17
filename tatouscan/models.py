@@ -27,10 +27,7 @@ class Gene:
         self.coordinates = coordinates
 
     def __repr__(self):
-        return (
-            f"Gene(name={self.name},"
-            f"contig={self.contig.name if self.contig else None})"
-        )
+        return f"Gene(name={self.name}, coordinates={self.coordinates})"
 
     @property
     def start(self) -> int:
@@ -59,7 +56,4 @@ class Cds(Gene):
         self.protein_sequence = protein_sequence
 
     def __repr__(self):
-        return (
-            f"Gene(name={self.name}, sequence={self.protein_sequence}, "
-            f"contig={self.contig.name if self.contig else None})"
-        )
+        return f"Gene(name={self.name}, sequence={self.protein_sequence}, coordinates={self.coordinates})"
