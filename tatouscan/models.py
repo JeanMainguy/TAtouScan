@@ -12,9 +12,6 @@ class Contig:
         self.genes = genes or []
         self.length = length
 
-        for gene in self.genes:
-            gene.contig = self
-
     def __repr__(self):
         return f"Contig(id={self.name}, num_genes={len(self.genes)})"
 
