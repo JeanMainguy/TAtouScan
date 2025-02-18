@@ -57,3 +57,12 @@ class Cds(Gene):
 
     def __repr__(self):
         return f"Gene(name={self.name}, sequence={self.protein_sequence}, coordinates={self.coordinates})"
+
+
+class TaHit:
+
+    def __init__(self, protein_id: str, ta_name: str, score: float, evalue: float):
+        self.protein_id = protein_id
+        self.ta_name = ta_name
+        self.score = score
+        self.evalue = evalue
