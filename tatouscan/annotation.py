@@ -9,12 +9,13 @@ from pathlib import Path
 from tatouscan.models import TaHit
 
 
-def find_ta_hits(faa_file: Path, hmm_db: Path):
+def find_ta_hits(faa_file: Path, hmm_db: Path, e_value_threshold: float = 0.01):
     """
     Find hits of TAs in a protein fasta file.
 
     :params faa_file: Path to a protein fasta file.
     :params hmm_db: Path to a HMM database.
+    :params e_value_threshold: E-value threshold for hits. Default is 0.01.
 
     :returns: A dictionary with protein ids as keys and a list of TaHit objects as values.
     """
@@ -29,12 +30,12 @@ def find_ta_hits(faa_file: Path, hmm_db: Path):
     with pyhmmer.plan7.HMMFile(hmm_db) as hmm_file:
         for hmm in hmm_file:
             hmms.append(hmm)
-            print(hmm.name, hmm.cutoffs.trusted2)
 
-    protein_id_to_hits: defaultdict[str, list[TaHit]] = defaultdict(list)
+    protein_id_to_hits: defaultdict[str, List[TaHit]] = defaultdict(list)
 
-    for hits in pyhmmer.hmmsearch(hmms, proteins, E=0.01):
+    for hits in pyhmmer.hmmsearch(hmms, proteins, E=e_value_threshold):
         ta_name = hits.query.name.decode()
+
         for hit in hits:
             protein_id = hit.name.decode()
             protein_id_to_hits[protein_id].append(
