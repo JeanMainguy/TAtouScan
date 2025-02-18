@@ -13,6 +13,7 @@ from tatouscan.models import TaHit
 
 logger = logging.getLogger(__name__)
 
+
 def find_ta_hits(faa_file: Path, hmm_db: Path, e_value_threshold: float = 0.01):
     """
     Find hits of TAs in a protein fasta file.
