@@ -10,18 +10,18 @@ import logging
 logger = logging.getLogger(__name__)
 
 app = typer.Typer(
-    help="TatouScan: A tool for identifying toxin-antitoxin (TA) systems."
+    help="TAtouScan: A tool for identifying toxin-antitoxin (TA) systems."
 )
 
 
 def version_callback(value: bool):
     """Prints the version and exits if --version is passed."""
     if value:
-        typer.echo(f"TatouScan {__version__}")
+        typer.echo(f"TAtouScan {__version__}")
         raise typer.Exit()
 
 
-@app.command()
+@app.command(no_args_is_help=True)
 def main(
     version: Annotated[
         Optional[bool],
@@ -39,9 +39,9 @@ def main(
         handlers=[RichHandler()],
     )
 
-    """Main entry point for TatouScan CLI."""
+    """Main entry point for TAtouScan CLI."""
     typer.echo(
-        "TatouScan CLI is under development. Run `tatouscan --help` for available commands.",
+        "TAtouScan CLI is under development. Run `tatouscan --help` for available commands.",
         color=True,
     )
 
