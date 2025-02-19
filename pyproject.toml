@@ -14,10 +14,16 @@ keywords = ["Bioinformatics", "Prokaryote", "Genomics", "Toxin antitoxin", "Meta
 classifiers=[
     "Environment :: Console",
     "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
-    "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3",
-    "Topic :: Scientific/Engineering :: Bio-Informatics"]
+    "Operating System :: POSIX :: Linux",   
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Typing :: Typed",
+    ]
 
 license = {file="LICENCE"}
 
@@ -46,9 +52,9 @@ doc = [
      ]
 
 dev = [
-    "pytest>=7.0.0",
+    "pytest>=8.0.0",
     "pytest-cov",
-    "black"
+    "black>=8.0.0"
 ]
 #
 [project.urls]
