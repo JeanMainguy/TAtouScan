@@ -1,33 +1,56 @@
+from enum import Enum
 from typing import List, Optional, Tuple
 
 
+class Strand(Enum):
+    POSITIVE = "+"
+    NEGATIVE = "-"
+
+
+class Frame(Enum):
+    ZERO = 0
+    ONE = 1
+    TWO = 2
+
+
 class Contig:
+
     def __init__(
         self,
-        name: str,
+        id: str,
         genes: List["Gene"] = [],
         length: Optional[int] = None,
     ):
-        self.name = name
+        self.id = id
         self.genes = genes or []
         self.length = length
 
     def __repr__(self):
-        return f"Contig(id={self.name}, num_genes={len(self.genes)})"
+        return f"Contig(id={self.id}, num_genes={len(self.genes)})"
 
 
 class Gene:
+
     def __init__(
         self,
-        name: str,
+        id: str,
+        contig_id: str,
         coordinates: list[Tuple[int, int]],
-        contig: Optional[Contig] = None,
+        strand: Strand,
+        product: Optional[str] = None,
+        locus_tag: Optional[str] = None,
+        name: Optional[str] = None,
     ):
-        self.name = name
+        self.id = id
         self.coordinates = coordinates
+        self.strand = strand
+        self.contig_id = contig_id
+        self.name = name
+        self.product = product
+        self.locus_tag = locus_tag
 
     def __repr__(self):
-        return f"Gene(name={self.name}, coordinates={self.coordinates})"
+        return f"Gene(id={self.id}, coordinates={self.coordinates})"
 
     @property
     def start(self) -> int:
@@ -45,15 +68,33 @@ class Gene:
 
 
 class Cds(Gene):
+
     def __init__(
         self,
-        name: str,
+        id: str,
+        contig_id: str,
         coordinates: list[Tuple[int, int]],
+        strand: Strand,
+        frame: Frame,
+        product: Optional[str] = None,
+        locus_tag: Optional[str] = None,
+        name: Optional[str] = None,
+        protein_id: Optional[str] = None,
         protein_sequence: Optional[str] = None,
-        contig: Optional[Contig] = None,
     ):
-        super().__init__(name, coordinates, contig=contig)
+        super().__init__(
+            id=id,
+            contig_id=contig_id,
+            coordinates=coordinates,
+            strand=strand,
+            product=product,
+            locus_tag=locus_tag,
+            name=name,
+        )
+
+        self.frame = frame
+        self.protein_id = protein_id
         self.protein_sequence = protein_sequence
 
     def __repr__(self):
-        return f"Gene(name={self.name}, sequence={self.protein_sequence}, coordinates={self.coordinates})"
+        return f"CDS(name={self.id}, sequence={self.protein_sequence}, coordinates={self.coordinates})"
