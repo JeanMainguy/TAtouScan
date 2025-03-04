@@ -37,9 +37,17 @@ def parse_gff_file(gff_file: Path):
             if line.startswith("#"):  # Skip comments
                 continue
 
-            contig_id, _source, feature, start, stop, _score, strand, frame, attributes = (
-                line.split("\t")
-            )
+            (
+                contig_id,
+                _source,
+                feature,
+                start,
+                stop,
+                _score,
+                strand,
+                frame,
+                attributes,
+            ) = line.split("\t")
 
             if feature in ["CDS", "region"]:
 
@@ -58,14 +66,15 @@ def parse_gff_file(gff_file: Path):
                             f"Missing ID attribute in CDS feature: {line}, of file {gff_file}"
                         )
 
+                    cds = Cds(
+                        id=gene_id,
+                        contig_id=contig_id,
+                        coordinates=[(int(start), int(stop))],
+                        strand=Strand(strand),
+                        frame=Frame(int(frame)),
+                    )
 
-                    cds = Cds(id=gene_id, contig_id=contig_id,
-                               coordinates=[(int(start), int(stop))],
-                               strand=Strand(strand), 
-                               frame=Frame(int(frame)))
-                    
                     contig_id_to_cds[contig_id].append(cds)
-
 
     for contig, cds_list in contig_id_to_cds.items():
         yield contig, cds_list
