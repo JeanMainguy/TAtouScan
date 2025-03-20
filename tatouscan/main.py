@@ -8,7 +8,7 @@ from rich.logging import RichHandler
 import logging
 from pathlib import Path
 
-from tatouscan.parser import parse_gff_file
+from tatouscan.parser import get_cds_from_gff_and_faa_files
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,7 @@ def version_callback(value: bool):
 @app.command(no_args_is_help=True)
 def main(
     gff: Path,
+    faa: Path,
     version: Annotated[
         Optional[bool],
         typer.Option(
@@ -49,12 +50,10 @@ def main(
         color=True,
     )
 
-    contig_to_cds = parse_gff_file(gff)
-    contig, cds_list = list(contig_to_cds).pop()
+    contig_name_and_cdss = get_cds_from_gff_and_faa_files(gff_file=gff, faa_file=faa)
 
-    print(contig)
-    for cds in cds_list:
-        print(cds)
+    for contig_name, cdss in contig_name_and_cdss:
+        print(contig_name, len(cdss))
 
 
 if __name__ == "__main__":

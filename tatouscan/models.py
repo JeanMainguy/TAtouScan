@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import List, Optional, Tuple
 
+from pyhmmer.easel import DigitalSequence
+
 
 class Strand(Enum):
     POSITIVE = "+"
@@ -80,7 +82,7 @@ class Cds(Gene):
         locus_tag: Optional[str] = None,
         name: Optional[str] = None,
         protein_id: Optional[str] = None,
-        protein_sequence: Optional[str] = None,
+        digit_sequence: Optional[DigitalSequence] = None,
     ):
         super().__init__(
             id=id,
@@ -94,7 +96,16 @@ class Cds(Gene):
 
         self.frame = frame
         self.protein_id = protein_id
-        self.protein_sequence = protein_sequence
+        self.digit_sequence = digit_sequence
+
+    @property
+    def protein_sequence(self) -> str:
+        """
+        stop coordinate of the feature.
+        """
+        if self.digit_sequence is None:
+            raise ValueError(f"CDS {self.id} has no protein sequence.")
+        return self.digit_sequence.textize().sequence
 
     def __repr__(self):
-        return f"CDS(name={self.id}, sequence={self.protein_sequence}, coordinates={self.coordinates})"
+        return f"CDS(name={self.id}, coordinates={self.coordinates}, strand={self.strand}, protein_id={self.protein_id})"

@@ -1,8 +1,8 @@
 from pathlib import Path
-from typing import DefaultDict, Dict, List
+from typing import DefaultDict, Dict, List, Any
 from collections import defaultdict
-
-
+from pyfastx import Fasta  # type: ignore
+from pyhmmer.easel import Alphabet, TextSequence
 from tatouscan.utils import read_file
 from tatouscan.models import Cds, Strand, Frame
 
@@ -78,3 +78,17 @@ def parse_gff_file(gff_file: Path):
 
     for contig, cds_list in contig_id_to_cds.items():
         yield contig, cds_list
+
+
+def get_cds_from_gff_and_faa_files(gff_file: Path, faa_file: Path):
+
+    fa: Any = Fasta(faa_file.as_posix(), build_index=True)
+
+    for contig_name, cds_list in parse_gff_file(gff_file):
+        for cds in cds_list:
+            seq = fa[cds.id]
+            sequence = seq.seq.replace("*", "").encode("UTF-8")
+            digit_seq = TextSequence(sequence).digitize(Alphabet.amino())
+            cds.digit_sequence = digit_seq
+
+        yield contig_name, cds_list
