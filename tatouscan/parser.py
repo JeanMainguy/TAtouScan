@@ -34,7 +34,7 @@ def parse_gff_file(gff_file: Path):
 
         for line in gff_fh:
 
-            if line.startswith("#"):  # Skip comments
+            if line.startswith("#"):
                 continue
 
             (
@@ -87,8 +87,8 @@ def get_cds_from_gff_and_faa_files(gff_file: Path, faa_file: Path):
     for contig_name, cds_list in parse_gff_file(gff_file):
         for cds in cds_list:
             seq = fa[cds.id]
-            sequence = seq.seq.replace("*", "").encode("UTF-8")
-            digit_seq = TextSequence(sequence).digitize(Alphabet.amino())
-            cds.digit_sequence = digit_seq
+            cds.digit_sequence = TextSequence(
+                sequence=seq.seq.replace("*", "")
+            ).digitize(Alphabet.amino())
 
         yield contig_name, cds_list
