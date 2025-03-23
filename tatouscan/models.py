@@ -97,6 +97,7 @@ class Cds(Gene):
         self.frame = frame
         self.protein_id = protein_id
         self.digit_sequence = digit_sequence
+        self.ta_hits: List[TaHit] = []
 
     @property
     def protein_sequence(self) -> str:

@@ -8,7 +8,7 @@ from rich.logging import RichHandler
 import logging
 from pathlib import Path
 
-from tatouscan.parser import get_cds_from_gff_and_faa_files
+from tatouscan.annotation import annotate_cdss
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,7 @@ def version_callback(value: bool):
 def main(
     gff: Path,
     faa: Path,
+    hmm_db: Path,
     version: Annotated[
         Optional[bool],
         typer.Option(
@@ -50,10 +51,17 @@ def main(
         color=True,
     )
 
-    contig_name_and_cdss = get_cds_from_gff_and_faa_files(gff_file=gff, faa_file=faa)
+    contig_name_and_cdss = annotate_cdss(
+        gff_file=gff, faa_file=faa, hmm_db=hmm_db, e_value_threshold=0.01
+    )
 
     for contig_name, cdss in contig_name_and_cdss:
         print(contig_name, len(cdss))
+        for cds in cdss:
+            if len(cds.ta_hits) > 0:
+                print(cds.id, cds.coordinates, len(cds.ta_hits))
+
+        print("=" * 80)
 
 
 if __name__ == "__main__":

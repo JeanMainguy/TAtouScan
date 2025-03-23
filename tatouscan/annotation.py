@@ -11,10 +11,31 @@ from pathlib import Path
 
 from tatouscan.models import TaHit
 
+
+from tatouscan.parser import get_cdss_from_gff_file
+
 logger = logging.getLogger(__name__)
 
 
-def find_ta_hits(faa_file: Path, hmm_db: Path, e_value_threshold: float = 0.01):
+def load_hmm_db(hmm_db: Path):
+    """ """
+
+    logger.info(f"Loading HMM profiles from database: '{hmm_db}'")
+
+    hmms: List[HMM] = []
+
+    with pyhmmer.plan7.HMMFile(hmm_db) as hmm_file:
+        for hmm in hmm_file:
+            hmms.append(hmm)
+
+    logger.info(f"Loaded {len(hmms)} HMM profiles from '{hmm_db}'")
+
+    return hmms
+
+
+def annotate_sequences_from_faa_file(
+    faa_file: Path, hmm_db: Path, e_value_threshold: float = 0.01
+):
     """
     Find hits of TAs in a protein fasta file.
 
@@ -24,14 +45,13 @@ def find_ta_hits(faa_file: Path, hmm_db: Path, e_value_threshold: float = 0.01):
 
     :returns: A dictionary with protein ids as keys and a list of TaHit objects as values.
     """
-    logger.info(f"Loading HMM profiles from database: '{hmm_db}'")
-    hmms: List[HMM] = []
-    with pyhmmer.plan7.HMMFile(hmm_db) as hmm_file:
-        for hmm in hmm_file:
-            hmms.append(hmm)
-    logger.info(f"Loaded {len(hmms)} HMM profiles from '{hmm_db}'")
+
+    hmms = load_hmm_db(hmm_db)
 
     logger.info(f"Reading protein sequences from FASTA file: '{faa_file}'")
+
+    protein_id_to_hits: defaultdict[str, List[TaHit]] = defaultdict(list)
+
     with pyhmmer.easel.SequenceFile(faa_file, digital=True) as seqs_file:
         proteins = seqs_file.read_block()
 
@@ -41,11 +61,9 @@ def find_ta_hits(faa_file: Path, hmm_db: Path, e_value_threshold: float = 0.01):
             f"Starting TA hit search with E-value threshold: {e_value_threshold}"
         )
 
-        protein_id_to_hits: defaultdict[str, List[TaHit]] = defaultdict(list)
-
         for hits in track(
             pyhmmer.hmmsearch(hmms, proteins, E=e_value_threshold),
-            total=len(proteins),
+            total=len(hmms),
             description="Searching for TA hits",
         ):
             ta_name = hits.query.name.decode()
@@ -60,4 +78,25 @@ def find_ta_hits(faa_file: Path, hmm_db: Path, e_value_threshold: float = 0.01):
         logger.info(f"Identified {len(protein_id_to_hits)} proteins with TA hits")
         logger.info("TA hit search completed successfully")
 
-        return protein_id_to_hits
+    return protein_id_to_hits
+
+
+def annotate_cdss(
+    gff_file: Path,
+    faa_file: Path,
+    hmm_db: Path,
+    e_value_threshold: float = 0.01,
+    matching_attribute: str = "id",
+):
+
+    protein_id_to_hits = annotate_sequences_from_faa_file(
+        faa_file=faa_file, hmm_db=hmm_db, e_value_threshold=e_value_threshold
+    )
+
+    for contig_name, cds_list in get_cdss_from_gff_file(gff_file):
+
+        for cds in cds_list:
+            if getattr(cds, matching_attribute) in protein_id_to_hits:
+                cds.ta_hits = protein_id_to_hits[getattr(cds, matching_attribute)]
+
+        yield contig_name, cds_list

@@ -1,8 +1,6 @@
 from pathlib import Path
-from typing import DefaultDict, Dict, List, Any
+from typing import DefaultDict, Dict, List
 from collections import defaultdict
-from pyfastx import Fasta  # type: ignore
-from pyhmmer.easel import Alphabet, TextSequence
 from tatouscan.utils import read_file
 from tatouscan.models import Cds, Strand, Frame
 
@@ -26,7 +24,7 @@ def parse_gff_attributes(attribute_str: str) -> Dict[str, str]:
     return attributes_dict
 
 
-def parse_gff_file(gff_file: Path):
+def get_cdss_from_gff_file(gff_file: Path):
     """Parse a GFF file and return a list of GFF entries."""
 
     contig_id_to_cds: DefaultDict[str, List[Cds]] = defaultdict(list)
@@ -73,22 +71,7 @@ def parse_gff_file(gff_file: Path):
                         strand=Strand(strand),
                         frame=Frame(int(frame)),
                     )
-
                     contig_id_to_cds[contig_id].append(cds)
 
     for contig, cds_list in contig_id_to_cds.items():
         yield contig, cds_list
-
-
-def get_cds_from_gff_and_faa_files(gff_file: Path, faa_file: Path):
-
-    fa: Any = Fasta(faa_file.as_posix(), build_index=True)
-
-    for contig_name, cds_list in parse_gff_file(gff_file):
-        for cds in cds_list:
-            seq = fa[cds.id]
-            cds.digit_sequence = TextSequence(
-                sequence=seq.seq.replace("*", "")
-            ).digitize(Alphabet.amino())
-
-        yield contig_name, cds_list
