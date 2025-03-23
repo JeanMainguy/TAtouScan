@@ -62,8 +62,8 @@ def test_parse_gff_file_with_missing_id(gff_file: Path):
         list(parse_gff_file(gff_file=gff_file))
 
 
-def test_get_cds_from_gff_and_faa_files(gff_file:Path, faa_file:Path):
-    
+def test_get_cds_from_gff_and_faa_files(gff_file: Path, faa_file: Path):
+
     contig_name_and_cdss = get_cds_from_gff_and_faa_files(gff_file, faa_file)
 
     contig_name_and_cdss = list(contig_name_and_cdss)
