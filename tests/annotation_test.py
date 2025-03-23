@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from tatouscan.annotation import find_ta_hits
+from tatouscan.annotation import annotate_sequences_from_faa_file
 from tatouscan.models import TaHit
 from unittest import mock
 from typing import Generator, List
@@ -86,7 +86,7 @@ def test_find_ta_hits_valid_input(
     Test find_ta_hits with valid inputs and one hit, using a mock for hmmsearch.
     """
 
-    result = find_ta_hits(faa_file, hmm_db)
+    result = annotate_sequences_from_faa_file(faa_file, hmm_db)
     assert result is not None
     assert len(result) == 1
     assert "protein1" in result
@@ -107,7 +107,7 @@ def test_find_ta_hits_no_sequences(tmp_path: Path, hmm_db: Path) -> None:
     empty_faa_file.write_text("")
 
     with pytest.raises(ValueError):
-        find_ta_hits(empty_faa_file, hmm_db)
+        annotate_sequences_from_faa_file(empty_faa_file, hmm_db)
 
 
 def test_find_ta_hits_no_hits(
@@ -119,5 +119,5 @@ def test_find_ta_hits_no_hits(
     # Mock no hits
     mock_hmmsearch.return_value = []
 
-    result = find_ta_hits(faa_file, hmm_db)
+    result = annotate_sequences_from_faa_file(faa_file, hmm_db)
     assert result == {}

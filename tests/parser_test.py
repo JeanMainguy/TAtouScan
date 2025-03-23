@@ -1,6 +1,6 @@
 from pathlib import Path
 import pytest
-from tatouscan.parser import parse_gff_file, get_cds_from_gff_and_faa_files
+from tatouscan.parser import get_cdss_from_gff_file
 
 
 @pytest.fixture
@@ -42,7 +42,7 @@ def faa_file(tmp_path: Path):
 
 def test_parse_gff_file(gff_file: Path):
 
-    contig_name_and_cdss = parse_gff_file(gff_file=gff_file)
+    contig_name_and_cdss = get_cdss_from_gff_file(gff_file=gff_file)
 
     contig_name_and_cdss = list(contig_name_and_cdss)
 
@@ -59,21 +59,4 @@ def test_parse_gff_file_with_missing_id(gff_file: Path):
         fh.write("contig2	Prodigal:2.6	CDS	50	100	.	+	0\n")
 
     with pytest.raises(ValueError):
-        list(parse_gff_file(gff_file=gff_file))
-
-
-def test_get_cds_from_gff_and_faa_files(gff_file: Path, faa_file: Path):
-
-    contig_name_and_cdss = get_cds_from_gff_and_faa_files(gff_file, faa_file)
-
-    contig_name_and_cdss = list(contig_name_and_cdss)
-
-    assert len(contig_name_and_cdss) == 2
-
-    contig_name, cdss = contig_name_and_cdss[0]
-    cds = cdss[0]
-    assert contig_name == "contig1"
-    assert cds.id == "cds1"
-    assert cds.start == 1
-    assert cds.stop == 25
-    assert cds.protein_sequence == "TGPYMMNA"
+        list(get_cdss_from_gff_file(gff_file=gff_file))
