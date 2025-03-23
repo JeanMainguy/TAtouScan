@@ -99,15 +99,6 @@ class Cds(Gene):
         self.digit_sequence = digit_sequence
         self.ta_hits: List[TaHit] = []
 
-    @property
-    def protein_sequence(self) -> str:
-        """
-        stop coordinate of the feature.
-        """
-        if self.digit_sequence is None:
-            raise ValueError(f"CDS {self.id} has no protein sequence.")
-        return self.digit_sequence.textize().sequence
-
     def __repr__(self):
         return f"CDS(name={self.id}, coordinates={self.coordinates}, strand={self.strand}, protein_id={self.protein_id})"
 
