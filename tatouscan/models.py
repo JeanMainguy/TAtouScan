@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Set
 
 from pyhmmer.easel import DigitalSequence
 
@@ -68,6 +68,19 @@ class Gene:
         """
         return self.coordinates[-1][-1]
 
+    def distance_from(self, other_gene: "Gene"):
+        # TODO take into account circularity
+        assert self.contig_id == other_gene.contig_id
+
+        if self.start <= other_gene.start:
+            return other_gene.start - self.stop
+
+        elif self.start > other_gene.start:
+            return self.start - other_gene.stop
+        else:
+            # self.start == other_gene.start
+            raise ValueError()
+
 
 class Cds(Gene):
 
@@ -98,9 +111,57 @@ class Cds(Gene):
         self.protein_id = protein_id
         self.digit_sequence = digit_sequence
         self.ta_hits: List[TaHit] = []
+        self.neighbor_genes: List["Cds"] = []
+        self.ta_cluster: GeneCluster | None = None
 
     def __repr__(self):
         return f"CDS(name={self.id}, coordinates={self.coordinates}, strand={self.strand}, protein_id={self.protein_id})"
+
+    def add_neigbor_gene(self, gene: "Cds"):
+        self.neighbor_genes.append(gene)
+        gene.neighbor_genes.append(self)
+
+    def update_ta_cluster(self, gene: "Cds"):
+
+        if self.ta_cluster is None and gene.ta_cluster is None:
+
+            ta_cluster: GeneCluster = GeneCluster({self, gene})
+
+            self.ta_cluster = ta_cluster
+            gene.ta_cluster = ta_cluster
+
+        elif self.ta_cluster and gene.ta_cluster is None:
+
+            self.ta_cluster.add(gene)
+            gene.ta_cluster = self.ta_cluster
+
+        elif gene.ta_cluster and self.ta_cluster is None:
+            gene.ta_cluster.add(self)
+            self.ta_cluster = gene.ta_cluster
+
+        elif gene.ta_cluster and self.ta_cluster:
+
+            self.ta_cluster.combine(gene.ta_cluster)
+
+
+class GeneCluster:
+
+    def __init__(self, genes: Set[Cds]):
+        self.genes = genes
+
+    def add(self, gene: Cds):
+        self.genes.add(gene)
+
+    def combine(self, other_cluster: "GeneCluster"):
+
+        self.genes |= other_cluster.genes
+
+        for gene in self.genes:
+            gene.ta_cluster = self
+
+    def __repr__(self):
+        return f"GeneCluster(gene_count={len(self.genes)}: {[gene for gene in self.genes]})"
+
 
 class TaHit:
 

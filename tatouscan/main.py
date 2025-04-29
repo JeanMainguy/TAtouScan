@@ -9,6 +9,7 @@ import logging
 from pathlib import Path
 
 from tatouscan.annotation import annotate_cdss
+from tatouscan.system import group_cdss_with_ta_annotation
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +30,16 @@ def main(
     gff: Path,
     faa: Path,
     hmm_db: Path,
+    max_distance: Annotated[
+        int,
+        typer.Option(help="Show the version and exit."),
+    ] = 500,
     version: Annotated[
         Optional[bool],
         typer.Option(
-            "--version", callback=version_callback, help="Show the version and exit."
+            "--version",
+            callback=version_callback,
+            help="Show the version and exit.",
         ),
     ] = None,
 ):
@@ -55,13 +62,7 @@ def main(
         gff_file=gff, faa_file=faa, hmm_db=hmm_db, e_value_threshold=0.01
     )
 
-    for contig_name, cdss in contig_name_and_cdss:
-        print(contig_name, len(cdss))
-        for cds in cdss:
-            if len(cds.ta_hits) > 0:
-                print(cds.id, cds.coordinates, len(cds.ta_hits))
-
-        print("=" * 80)
+    group_cdss_with_ta_annotation(contig_name_and_cdss, max_distance)
 
 
 if __name__ == "__main__":
