@@ -30,3 +30,6 @@ def group_cdss_with_ta_annotation(
                     break
 
         yield contig_name, sorted_cdss_with_ta_hit
+    logger.info(
+        f"Completed grouping of CDSs with TA annotation within the specified distance of {max_distance}nt."
+    )

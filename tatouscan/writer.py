@@ -1,4 +1,4 @@
-from typing import Any, Generator, Dict, List
+from typing import Any, Generator, Dict, List, Set
 
 from tatouscan.models import Cds, TaHit
 from pathlib import Path
@@ -41,18 +41,6 @@ def get_best_hit(ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str]]):
 
 
 def summarise_ta_hits(ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str]]):
-
-    # gene_types = [
-    #     hmm_db_info[ta_hit.ta_name]["type"]
-    #     for ta_hit in ta_hits
-    #     if ta_hit.ta_name in hmm_db_info
-    # ]
-    # if gene_types and gene_types.count("Toxin") / len(gene_types) > 0.75:
-    #     gene_type = "Toxin"
-    # elif gene_types and gene_types.count("Antitoxin") / len(gene_types) > 0.75:
-    #     gene_type = "Antitoxin"
-    # else:
-    #     gene_type = "Unknown"
 
     best_hit = min(ta_hits, key=lambda hit: hit.evalue)
     gene_type = hmm_db_info[best_hit.ta_name]["type"]
@@ -103,6 +91,12 @@ def write_gene_with_ta_annotation(
     """
     Write the gene with TA annotation to a file.
     """
+
+    logger.info(f"Writing gene with TA annotation to file: '{output_file}'")
+
+    gene_clusters: Set[int] = set()
+    single_genes_count = 0
+    gene_in_cluster_count = 0
     with open(output_file, "w") as fl:
         writer = None
         for contig_name, cdss in contig_name_and_cdss_with_ta_hit:
@@ -120,20 +114,28 @@ def write_gene_with_ta_annotation(
                 if cds.ta_cluster:
                     ta_gene_info["ta_system_id"] = cds.ta_cluster.id
                     ta_gene_info["is_single_gene"] = False
+                    gene_clusters.add(cds.ta_cluster.id)
+                    gene_in_cluster_count += 1
                 else:
                     ta_gene_info["is_single_gene"] = True
                     ta_gene_info["ta_system_id"] = None
+                    single_genes_count += 1
 
                 hit_info = summarise_ta_hits(cds.ta_hits, hmm_db_info)
 
                 ta_gene_info.update(hit_info)
-                logger.info(ta_gene_info)
 
                 if writer is None:
-                    print(ta_gene_info)
                     writer = csv.DictWriter(
                         fl, fieldnames=ta_gene_info.keys(), delimiter="\t"
                     )
                     writer.writeheader()
 
                 writer.writerow(ta_gene_info)
+
+    logger.info("Finished writing genes with TA annotations.")
+    logger.info(
+        f"Identified {len(gene_clusters)} gene groups with TA annotations, "
+        f"containing a total of {gene_in_cluster_count} genes."
+    )
+    logger.info(f"Identified {single_genes_count} single genes with TA annotations.")
