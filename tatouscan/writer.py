@@ -92,8 +92,6 @@ def write_gene_with_ta_annotation(
     Write the gene with TA annotation to a file.
     """
 
-    logger.info(f"Writing gene with TA annotation to file: '{output_file}'")
-
     gene_clusters: Set[int] = set()
     single_genes_count = 0
     gene_in_cluster_count = 0
@@ -133,7 +131,7 @@ def write_gene_with_ta_annotation(
 
                 writer.writerow(ta_gene_info)
 
-    logger.info("Finished writing genes with TA annotations.")
+    logger.info(f"Finished writing genes with TA annotations to file '{output_file}'")
     logger.info(
         f"Identified {len(gene_clusters)} gene groups with TA annotations, "
         f"containing a total of {gene_in_cluster_count} genes."

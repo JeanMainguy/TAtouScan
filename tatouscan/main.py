@@ -103,9 +103,14 @@ def main(
         "TAtouScan CLI is under development. Run `tatouscan --help` for available commands.",
         color=True,
     )
+    cds_protein_attr = ["id"]  # ["id", "protein_id", "name", "locus_tag"]
 
     contig_name_and_cdss = annotate_cdss(
-        gff_file=gff, faa_file=faa, hmm_db=hmm_db, e_value_threshold=max_e_value
+        gff_file=gff,
+        faa_file=faa,
+        hmm_db=hmm_db,
+        e_value_threshold=max_e_value,
+        matching_attributes=cds_protein_attr,
     )
 
     contig_name_and_cdss_with_ta_hit = group_cdss_with_ta_annotation(

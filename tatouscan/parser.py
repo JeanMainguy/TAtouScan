@@ -58,6 +58,10 @@ def get_cdss_from_gff_file(gff_file: Path):
                     attributes = parse_gff_attributes(attributes)
 
                     gene_id = attributes.get("ID")
+                    protein_id = attributes.get("PROTEIN_ID")
+                    locus_tag = attributes.get("LOCUS_TAG")
+                    name = attributes.get("NAME")
+                    product = attributes.get("PRODUCT")
 
                     if gene_id is None:
                         raise ValueError(
@@ -70,6 +74,10 @@ def get_cdss_from_gff_file(gff_file: Path):
                         coordinates=[(int(start), int(stop))],
                         strand=Strand(strand),
                         frame=Frame(int(frame)),
+                        product=product,
+                        locus_tag=locus_tag,
+                        name=name,
+                        protein_id=protein_id,
                     )
                     contig_id_to_cds[contig_id].append(cds)
 

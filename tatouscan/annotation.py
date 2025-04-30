@@ -9,7 +9,7 @@ from collections import defaultdict
 
 from pathlib import Path
 
-from tatouscan.models import TaHit
+from tatouscan.models import TaHit, Cds
 import csv
 
 from tatouscan.parser import get_cdss_from_gff_file
@@ -86,20 +86,32 @@ def annotate_cdss(
     faa_file: Path,
     hmm_db: Path,
     e_value_threshold: float = 0.01,
-    matching_attribute: str = "id",
+    matching_attributes: list[str] = ["id", "protein_id", "name", "locus_tag"],
 ):
 
     protein_id_to_hits = annotate_sequences_from_faa_file(
         faa_file=faa_file, hmm_db=hmm_db, e_value_threshold=e_value_threshold
     )
+    cds_from_gff_with_hits: List[Cds] = []
 
     for contig_name, cds_list in get_cdss_from_gff_file(gff_file):
 
         for cds in cds_list:
-            if getattr(cds, matching_attribute) in protein_id_to_hits:
-                cds.ta_hits = protein_id_to_hits[getattr(cds, matching_attribute)]
+            for attribute in matching_attributes:
+                if getattr(cds, attribute) in protein_id_to_hits:
+                    cds.ta_hits = protein_id_to_hits[getattr(cds, attribute)]
+                    cds_from_gff_with_hits.append(cds)
+                    break
 
         yield contig_name, cds_list
+
+    if len(cds_from_gff_with_hits) != len(protein_id_to_hits):
+
+        logger.critical(
+            f"{len(protein_id_to_hits)} proteins with TA hits were identified from the FAA file, "
+            f"but only {len(cds_from_gff_with_hits)} matching CDS entries were found in the GFF file. "
+            f"This may indicate missing or inconsistent attributes in the GFF file. "
+        )
 
 
 def parse_hmm_db_info(hmm_info_file: Path):
