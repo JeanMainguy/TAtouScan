@@ -145,9 +145,13 @@ class Cds(Gene):
 
 
 class GeneCluster:
+    counter: int = 1
 
     def __init__(self, genes: Set[Cds]):
         self.genes = genes
+
+        self.id = GeneCluster.counter
+        GeneCluster.counter += 1
 
     def add(self, gene: Cds):
         self.genes.add(gene)
@@ -164,9 +168,11 @@ class GeneCluster:
 
 
 class TaHit:
-
     def __init__(self, protein_id: str, ta_name: str, score: float, evalue: float):
         self.protein_id = protein_id
         self.ta_name = ta_name
         self.score = score
         self.evalue = evalue
+
+    def __repr__(self):
+        return f"TaHit(protein_id={self.protein_id}, ta_name={self.ta_name}, score={self.score}, evalue={self.evalue})"

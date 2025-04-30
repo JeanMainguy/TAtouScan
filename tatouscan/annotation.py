@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 import pyhmmer.easel
 import logging
 from rich.progress import track
@@ -10,7 +10,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from tatouscan.models import TaHit
-
+import csv
 
 from tatouscan.parser import get_cdss_from_gff_file
 
@@ -100,3 +100,21 @@ def annotate_cdss(
                 cds.ta_hits = protein_id_to_hits[getattr(cds, matching_attribute)]
 
         yield contig_name, cds_list
+
+
+def parse_hmm_db_info(hmm_info_file: Path):
+    """
+    Parse a TSV file and return a dictionary where each key is the hmm_name,
+    and each value is another dictionary with the other column names and their values.
+
+    :param hmm_db_info: Path to the HMM database information file.
+    :return: A dictionary with protein ids as keys and a list of TaHit objects as values.
+    """
+    result: Dict[str, Dict[str, str]] = {}
+    with open(hmm_info_file, newline="") as tsvfile:
+        reader = csv.DictReader(tsvfile, delimiter="\t")
+        for row in reader:
+            hmm_name = row.pop("hmm_name")
+            result[hmm_name] = dict(row)
+
+    return result
