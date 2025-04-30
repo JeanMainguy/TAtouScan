@@ -10,8 +10,8 @@
 1. **Clone the repository:**
 
 ```bash
-git clone https://github.com/JeanMainguy/tatouscan.git
-cd tatouscan
+git clone https://github.com/JeanMainguy/TAtouScan.git
+cd TAtouScan
 ```
 
 2. **Create and activate a virtual environment:**
@@ -46,8 +46,8 @@ conda create -n tatouscan python=3.12
 conda activate tatouscan
 
 # Clone the repository
-git clone https://github.com/JeanMainguy/tatouscan.git
-cd tatouscan
+git clone https://github.com/JeanMainguy/TAtouScan.git
+cd TAtouScan
 
 # Install TAtouScan
 pip install -e .
