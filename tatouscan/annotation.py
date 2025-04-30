@@ -1,0 +1,120 @@
+from typing import List, Dict
+import pyhmmer.easel
+import logging
+from rich.progress import track
+
+
+from pyhmmer.plan7 import HMM
+from collections import defaultdict
+
+from pathlib import Path
+
+from tatouscan.models import TaHit
+import csv
+
+from tatouscan.parser import get_cdss_from_gff_file
+
+logger = logging.getLogger(__name__)
+
+
+def load_hmm_db(hmm_db: Path):
+    """ """
+
+    logger.info(f"Loading HMM profiles from database: '{hmm_db}'")
+
+    hmms: List[HMM] = []
+
+    with pyhmmer.plan7.HMMFile(hmm_db) as hmm_file:
+        for hmm in hmm_file:
+            hmms.append(hmm)
+
+    logger.info(f"Loaded {len(hmms)} HMM profiles from '{hmm_db}'")
+
+    return hmms
+
+
+def annotate_sequences_from_faa_file(
+    faa_file: Path, hmm_db: Path, e_value_threshold: float = 0.01
+):
+    """
+    Find hits of TAs in a protein fasta file.
+
+    :params faa_file: Path to a protein fasta file.
+    :params hmm_db: Path to a HMM database.
+    :params e_value_threshold: E-value threshold for hits. Default is 0.01.
+
+    :returns: A dictionary with protein ids as keys and a list of TaHit objects as values.
+    """
+
+    hmms = load_hmm_db(hmm_db)
+
+    logger.info(f"Reading protein sequences from FASTA file: '{faa_file}'")
+
+    protein_id_to_hits: defaultdict[str, List[TaHit]] = defaultdict(list)
+
+    with pyhmmer.easel.SequenceFile(faa_file, digital=True) as seqs_file:
+        proteins = seqs_file.read_block()
+
+        logger.info(f"Found {len(proteins)} protein sequences in '{faa_file}'")
+
+        logger.info(
+            f"Starting TA hit search with E-value threshold: {e_value_threshold}"
+        )
+
+        for hits in track(
+            pyhmmer.hmmsearch(hmms, proteins, E=e_value_threshold),
+            total=len(hmms),
+            description="Searching for TA hits",
+        ):
+            ta_name = hits.query.name.decode()
+
+            for hit in hits:
+                protein_id = hit.name.decode()
+
+                protein_id_to_hits[protein_id].append(
+                    TaHit(protein_id, ta_name, hit.score, hit.evalue)
+                )
+
+        logger.info(f"Identified {len(protein_id_to_hits)} proteins with TA hits")
+        logger.info("TA hit search completed successfully")
+
+    return protein_id_to_hits
+
+
+def annotate_cdss(
+    gff_file: Path,
+    faa_file: Path,
+    hmm_db: Path,
+    e_value_threshold: float = 0.01,
+    matching_attribute: str = "id",
+):
+
+    protein_id_to_hits = annotate_sequences_from_faa_file(
+        faa_file=faa_file, hmm_db=hmm_db, e_value_threshold=e_value_threshold
+    )
+
+    for contig_name, cds_list in get_cdss_from_gff_file(gff_file):
+
+        for cds in cds_list:
+            if getattr(cds, matching_attribute) in protein_id_to_hits:
+                cds.ta_hits = protein_id_to_hits[getattr(cds, matching_attribute)]
+
+        yield contig_name, cds_list
+
+
+def parse_hmm_db_info(hmm_info_file: Path):
+    """
+    Parse a TSV file and return a dictionary where each key is the hmm_name,
+    and each value is another dictionary with the other column names and their values.
+
+    :param hmm_db_info: Path to the HMM database information file.
+    :return: A dictionary with protein ids as keys and a list of TaHit objects as values.
+    """
+    result: Dict[str, Dict[str, str]] = {}
+    with open(hmm_info_file, newline="") as tsvfile:
+        reader = csv.DictReader(tsvfile, delimiter="\t")
+        for row in reader:
+            hmm_name = row.pop("hmm_name")
+            result[hmm_name] = dict(row)
+
+    return result
