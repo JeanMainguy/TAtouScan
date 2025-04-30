@@ -56,7 +56,7 @@ def summarise_ta_hits(ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str
 
     best_hit = min(ta_hits, key=lambda hit: hit.evalue)
     gene_type = hmm_db_info[best_hit.ta_name]["type"]
-    
+
     tadb_hits = [
         ta_hit
         for ta_hit in ta_hits

@@ -12,11 +12,13 @@ def group_cdss_with_ta_annotation(
 ):
     for contig_name, cdss in contig_name_and_cdss:
 
-        sorted_cdss_with_ta_hit = sorted([cds for cds in cdss if cds.ta_hits], key=lambda x: x.start)
+        sorted_cdss_with_ta_hit = sorted(
+            [cds for cds in cdss if cds.ta_hits], key=lambda x: x.start
+        )
 
         for i, cds_i in enumerate(sorted_cdss_with_ta_hit):
 
-            for cds_j in sorted_cdss_with_ta_hit[i+1:]:
+            for cds_j in sorted_cdss_with_ta_hit[i + 1 :]:
 
                 if cds_i.distance_from(cds_j) <= max_distance:
 
