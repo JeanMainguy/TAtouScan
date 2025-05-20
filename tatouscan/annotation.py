@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Set
 import pyhmmer.easel
 import logging
 from rich.progress import track
@@ -93,7 +93,7 @@ def annotate_cdss(
         faa_file=faa_file, hmm_db=hmm_db, e_value_threshold=e_value_threshold
     )
     cds_from_gff_with_hits: List[Cds] = []
-
+    matching_ids: Set[str] = set()
     for contig_name, cds_list in get_cdss_from_gff_file(gff_file):
 
         for cds in cds_list:
@@ -101,11 +101,12 @@ def annotate_cdss(
                 if getattr(cds, attribute) in protein_id_to_hits:
                     cds.ta_hits = protein_id_to_hits[getattr(cds, attribute)]
                     cds_from_gff_with_hits.append(cds)
+                    matching_ids.add(getattr(cds, attribute))
                     break
 
         yield contig_name, cds_list
 
-    if len(cds_from_gff_with_hits) != len(protein_id_to_hits):
+    if len(cds_from_gff_with_hits) < len(protein_id_to_hits):
 
         logger.critical(
             f"{len(protein_id_to_hits)} proteins with TA hits were identified from the FAA file, "
