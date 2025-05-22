@@ -113,7 +113,7 @@ The HMM database used by TAtouScan is composed of profiles collected from multip
 
 ## Output
 
-TatouScan produces a TSV file (`tatouscan_results.tsv`) summarizing the predicted toxin-antitoxin (TA) genes. The file includes the following columns:
+TAtouScan produces a TSV file (`tatouscan_results.tsv`) summarizing the predicted toxin-antitoxin (TA) genes. The file includes the following columns:
 
 | Column Name                | Description                                                            |
 | -------------------------- | ---------------------------------------------------------------------- |
