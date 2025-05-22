@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Use of a list of attributes to map protein id and gene in the GFF.
+- Improve protein id and gene id mapping using a list of attributes.
+- Group Genes in systems only when they are on the same strand.
 
 ## [v0.1.0] – 2025-04-29
 

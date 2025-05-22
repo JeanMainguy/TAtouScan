@@ -21,7 +21,9 @@ def group_cdss_with_ta_annotation(
             for cds_j in sorted_cdss_with_ta_hit[i + 1 :]:
 
                 if cds_i.distance_from(cds_j) <= max_distance:
-
+                    if cds_i.strand != cds_j.strand:
+                        # not grouping gene in systems from opposit strands
+                        continue
                     cds_i.add_neigbor_gene(cds_j)
 
                     cds_i.update_ta_cluster(cds_j)
