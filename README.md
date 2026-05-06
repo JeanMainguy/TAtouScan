@@ -56,37 +56,54 @@ pip install -e .
 > TAtouScan is not yet available via `bioconda`. The above method combines `conda` for environment management and `pip` for installation.
 
 
-### Download TAtouScan HMM Database
+### Download the TAtouScan Database
 
-TAtouScan requires a database of HMM profiles to run. You can download the latest version from Zenodo:  
-🔗 https://zenodo.org/records/15305313
+TAtouScan requires a database directory containing HMM profiles and reference statistics.
 
-Download the required files using:
+> **TODO**: Upload the updated database to Zenodo and add the download link here.
 
+<!-- Once available, download and extract with:
 ```bash
-wget https://zenodo.org/records/15305313/files/tatouscan_hmm_description.tsv
-wget https://zenodo.org/records/15305313/files/tatouscan_hmm_profiles.hmm.gz
+wget https://zenodo.org/records/XXXXXXX/files/tatouscan_db.tar.gz
+tar -xzf tatouscan_db.tar.gz
+```
+-->
+
+The database directory must contain the following four files:
+
+```
+tatouscan_db/
+  ta.hmm                 # HMM profiles (HMMER3 format)
+  hmm_info.tsv           # profile metadata (name, type, source)
+  family_statistics.tsv  # per-family reference statistics for scoring
+  known_pairs.tsv        # known toxin–antitoxin family co-occurrences
 ```
 
 
 ## Usage
 
-After installation and downloading the required HMM database, you can run TAtouScan as follows:
+After installation and downloading the database, run TAtouScan with:
 
-TAtouScan currently requires:
 - a **GFF** file with gene annotations
 - a **FAA** file with the corresponding protein sequences
-
-To identify toxin-antitoxin systems in a genome, run:
+- the **database directory** downloaded above
 
 ```bash
-tatouscan --gff <genes.gff> --faa <proteins.faa> \
-  --hmm_db tatouscan_hmm_profiles.hmm.gz \
-  --hmm_info tatouscan_hmm_description.tsv
+tatouscan --gff <genes.gff> --faa <proteins.faa> --db tatouscan_db/
 ```
 
-This command will produce an output file named:  
-📄 `tatouscan_results.tsv` — listing all predicted toxins and antitoxins found in the input genome.
+By default, results are written to a directory called `tatouscan_results/`. Use `--outdir` to specify a different location:
+
+```bash
+tatouscan --gff <genes.gff> --faa <proteins.faa> --db tatouscan_db/ --outdir my_results/
+```
+
+Two TSV files are produced inside the output directory:
+
+| File | Description |
+|------|-------------|
+| `tatouscan_results.tsv` | One row per predicted toxin or antitoxin gene |
+| `tatouscan_results_pairs.tsv` | One row per predicted TA pair (two-gene systems only) |
 
 
 
@@ -113,31 +130,112 @@ The HMM database used by TAtouScan is composed of profiles collected from multip
 
 ## Output
 
-TAtouScan produces a TSV file (`tatouscan_results.tsv`) summarizing the predicted toxin-antitoxin (TA) genes. The file includes the following columns:
+TAtouScan writes two TSV files into the output directory.
 
-| Column Name                | Description                                                            |
-| -------------------------- | ---------------------------------------------------------------------- |
-| `contig_name`              | Name of the contig where the gene is located                           |
-| `gene_id`                  | Unique identifier of the gene (from the input GFF file)                |
-| `start`                    | Start position of the gene on the contig                               |
-| `end`                      | End position of the gene on the contig                                 |
-| `strand`                   | Strand of the gene (`+` or `-`)                                        |
-| `product`                  | Predicted function or product of the gene (if available)               |
-| `is_single_gene`           | Whether the gene is a single hit or part of a TA pair (`True`/`False`) |
-| `ta_system_id`             | ID of the TA system this gene belongs to (shared between paired genes) |
-| `gene_type`                | Type of gene: either `toxin` or `antitoxin`                            |
-| `TASmania_hmm_name`        | Name of the matched HMM profile from the TASmania database (if any)    |
-| `TASmania_hmm_score`       | Bit score of the TASmania HMM hit                                      |
-| `TASmania_hmm_evalue`      | E-value of the TASmania HMM hit                                        |
-| `TASmania_hmm_description` | Description of the TASmania HMM profile                                |
-| `Other_hmm_name`           | Name of a matched HMM profile from other sources (if any)              |
-| `Other_hmm_score`          | Bit score of the "Other" HMM hit                                       |
-| `Other_hmm_evalue`         | E-value of the "Other" HMM hit                                         |
-| `Other_hmm_description`    | Description of the HMM profile from other sources                      |
-| `TADB3_hmm_name`           | Name of the matched HMM profile from the TADB3 database (if any)       |
-| `TADB3_hmm_score`          | Bit score of the TADB3 HMM hit                                         |
-| `TADB3_hmm_evalue`         | E-value of the TADB3 HMM hit                                           |
-| `TADB3_hmm_description`    | Description of the TADB3 HMM profile                                   |
+By default, only the most informative columns are written. Add `--detailed` to include per-source HMM breakdowns and raw Z-score columns.
+
+### `tatouscan_results.tsv` — per-gene results
+
+One row per predicted toxin or antitoxin gene.
+
+| Column | Description |
+|--------|-------------|
+| `contig_name` | Contig where the gene is located |
+| `gene_id` | Gene identifier (from the input GFF) |
+| `start` / `end` | Genomic coordinates |
+| `strand` | `+` or `-` |
+| `length_aa` | Protein length in amino acids |
+| `product` | Predicted gene product (if available) |
+| `ta_system_id` | ID shared by both genes of a pair (`None` for single-gene predictions) |
+| `is_single_gene` | `True` if no paired partner was found |
+| `gene_type` | `Toxin` or `Antitoxin` |
+| `hmm_name` / `hmm_score` / `hmm_evalue` | Best HMM hit across all database sources |
+| `hmm_source` | Database the best hit comes from (`TADB3`, `TASmania`, or other) |
+| `hmm_description` | Profile description |
+| `pair_is_known` | `1` if this toxin–antitoxin family combination is known in TADB3, `0` if not, `None` if family could not be identified |
+| `score` | Unified match score in `(0, 1]` (see [Scoring](#scoring)) |
+
+Scoring columns are `None` for single-gene predictions.
+
+### `tatouscan_results_pairs.tsv` — per-pair results
+
+One row per predicted toxin–antitoxin pair. For systems with more than one toxin or antitoxin, all valid combinations are written as separate rows.
+
+| Column | Description |
+|--------|-------------|
+| `ta_system_id` | Shared system ID (matches the per-gene file) |
+| `contig_name` | Contig where the pair is located |
+| `toxin_gene_id` | Toxin gene identifier |
+| `toxin_strand` | `+` or `-` |
+| `toxin_product` | Predicted gene product |
+| `toxin_length_aa` | Toxin protein length in amino acids |
+| `toxin_hmm_name` / `_score` / `_evalue` / `_source` / `_description` | Best HMM hit for the toxin |
+| `antitoxin_gene_id` | Antitoxin gene identifier |
+| `antitoxin_strand` | `+` or `-` |
+| `antitoxin_product` | Predicted gene product |
+| `antitoxin_length_aa` | Antitoxin protein length in amino acids |
+| `antitoxin_hmm_name` / `_score` / `_evalue` / `_source` / `_description` | Best HMM hit for the antitoxin |
+| `intergenic_distance` | Distance in nucleotides between the two genes (negative = overlap) |
+| `pair_is_known` | `1` / `0` / `None` (see above) |
+| `score` | Unified match score in `(0, 1]` |
+
+### Detailed output
+
+With `--detailed`, the following additional columns are written to both files:
+
+- **Per-source HMM hits**: `TASmania_hmm_name/score/evalue/description`, `TADB3_hmm_name/score/evalue/description`, `Other_hmm_name/score/evalue/description` (prefixed with `toxin_` / `antitoxin_` in the pairs file)
+- **Raw Z-scores**: `toxin_size_z`, `at_size_z`, `intergenic_distance_z`, `matched_family`, `n_reference_pairs`
+
+The pairs file also adds `toxin_start/end` and `antitoxin_start/end` in detailed mode.
+
+---
+
+## Scoring
+
+Every predicted TA **pair** is compared against reference statistics derived from known TADB3 type-II systems. The score measures how closely the predicted pair resembles a genuine TA system of its family.
+
+### What is compared
+
+Three structural features are measured for each predicted pair and compared against the reference distribution for the matched family:
+
+| Feature | Definition |
+|---------|------------|
+| `toxin_size` | Toxin protein length (amino acids) |
+| `at_size` | Antitoxin protein length (amino acids) |
+| `intergenic_distance` | Distance in nucleotides between the two genes (negative = overlap) |
+
+The **toxin family** is determined from its best TADB3 HMM hit. If no TADB3 hit exists or the family has fewer than 20 reference pairs, global statistics computed across all families are used as a fallback.
+
+### Robust Z-scores
+
+For each feature, a Z-score measures how far the predicted value deviates from the family reference:
+
+$$z = \frac{x - \text{median}}{\text{MAD} / 0.6745}$$
+
+Median and MAD (median absolute deviation) are used instead of mean and standard deviation because size distributions in TA families are often skewed. This makes the scores robust to outliers.
+
+### Unified score
+
+All Z-scores are combined into a single **score** in the range $(0, 1]$:
+
+$$\text{score} = \exp\!\left(-\frac{1}{n}\sum_i |z_i|\right)$$
+
+The mean is taken over all available terms: the three structural Z-scores plus a **compatibility term** ($z_{\text{compat}}$) based on whether this toxin–antitoxin family combination has been observed in TADB3:
+
+- `pair_is_known = 1` → $z_{\text{compat}} = 0$ (no penalty)
+- `pair_is_known = 0` → $z_{\text{compat}} = 2$ (unknown combination lowers the score)
+- `pair_is_known = None` → compatibility term excluded from the mean
+
+**Score interpretation:**
+
+| Score | Meaning |
+|-------|---------|
+| ~1.0 | Features match the family reference almost exactly, known combination |
+| ~0.7 | Moderate structural match, known combination |
+| ~0.4 | Moderate structural match, but family combination not seen in TADB3 |
+| < 0.2 | Large structural deviations or unknown combination — treat with caution |
+
+A high score supports a genuine TA pair; a low score does not exclude it, but suggests the prediction should be reviewed.
 
 
 
