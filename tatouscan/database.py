@@ -24,9 +24,9 @@ from pathlib import Path
 
 # Fixed filenames inside the database directory.
 DB_FILENAMES: dict[str, str] = {
-    "hmm_db":      "ta.hmm",
-    "hmm_info":    "hmm_info.tsv",
-    "ref_stats":   "family_statistics.tsv",
+    "hmm_db": "ta.hmm",
+    "hmm_info": "hmm_info.tsv",
+    "ref_stats": "family_statistics.tsv",
     "known_pairs": "known_pairs.tsv",
 }
 
@@ -34,9 +34,10 @@ DB_FILENAMES: dict[str, str] = {
 @dataclass(frozen=True)
 class TAtouScanDB:
     """Resolved paths to the four components of a TAtouScan database directory."""
-    hmm_db:      Path
-    hmm_info:    Path
-    ref_stats:   Path
+
+    hmm_db: Path
+    hmm_info: Path
+    ref_stats: Path
     known_pairs: Path
 
 
@@ -58,11 +59,7 @@ def load_db(path: Path) -> TAtouScanDB:
             "If you have a .tar.gz archive, extract it first: tar -xzf <archive>"
         )
 
-    missing = [
-        fname
-        for fname in DB_FILENAMES.values()
-        if not (path / fname).exists()
-    ]
+    missing = [fname for fname in DB_FILENAMES.values() if not (path / fname).exists()]
     if missing:
         raise FileNotFoundError(
             f"TAtouScan database at '{path}' is missing required file(s): "
@@ -71,8 +68,8 @@ def load_db(path: Path) -> TAtouScanDB:
         )
 
     return TAtouScanDB(
-        hmm_db      = path / DB_FILENAMES["hmm_db"],
-        hmm_info    = path / DB_FILENAMES["hmm_info"],
-        ref_stats   = path / DB_FILENAMES["ref_stats"],
-        known_pairs = path / DB_FILENAMES["known_pairs"],
+        hmm_db=path / DB_FILENAMES["hmm_db"],
+        hmm_info=path / DB_FILENAMES["hmm_info"],
+        ref_stats=path / DB_FILENAMES["ref_stats"],
+        known_pairs=path / DB_FILENAMES["known_pairs"],
     )

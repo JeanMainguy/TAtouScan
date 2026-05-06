@@ -73,6 +73,7 @@ COMPAT_PENALTY = 2.0
 # Loading reference data
 # ---------------------------------------------------------------------------
 
+
 def load_reference_statistics(path: Path) -> RefStats:
     """Load per-family reference statistics from *tadb3_family_statistics.tsv*.
 
@@ -105,14 +106,14 @@ def load_reference_statistics(path: Path) -> RefStats:
             for feat in SCORED_FEATURES:
                 if has_robust:
                     center = float(row[f"{feat}_median"])
-                    mad    = float(row[f"{feat}_mad"])
-                    scale  = mad / MAD_CONSISTENCY
+                    mad = float(row[f"{feat}_mad"])
+                    scale = mad / MAD_CONSISTENCY
                     if scale == 0.0:
                         # MAD=0: all values identical — fall back to std
                         scale = float(row.get(f"{feat}_std", 0.0))
                 else:
                     center = float(row[f"{feat}_mean"])
-                    scale  = float(row[f"{feat}_std"])
+                    scale = float(row[f"{feat}_std"])
                 entry[feat] = (center, scale)
             entry["n_pairs"] = int(row["n_pairs"])
             stats[family] = entry
@@ -136,6 +137,7 @@ def load_known_pairs(path: Path) -> KnownPairs:
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def get_gene_type(cds: Cds, hmm_db_info: HmmDbInfo) -> Optional[str]:
     """Return the type string (``"Toxin"`` or ``"Antitoxin"``) for *cds*."""
@@ -197,6 +199,7 @@ def _round_optional(value: Optional[float], ndigits: int = 3) -> Optional[float]
 # ---------------------------------------------------------------------------
 # Cluster scoring
 # ---------------------------------------------------------------------------
+
 
 def score_cluster(
     cluster: GeneCluster,
