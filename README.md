@@ -107,7 +107,7 @@ Two TSV files are produced inside the output directory:
 
 ## HMM Database Composition
 
-The HMM database used by TAtouScan is composed of profiles collected from multiple sources, including curated databases and literature. The file `tatouscan_hmm_description.tsv` provides metadata for each profile, indicating its origin and whether it corresponds to a **toxin** or an **antitoxin**.
+The HMM database used by TAtouScan is composed of profiles collected from multiple sources, including curated databases and literature. The file `hmm_info.tsv` provides metadata for each profile, indicating its origin and whether it corresponds to a **toxin** or an **antitoxin**.
 
 ### Breakdown of the database:
 
