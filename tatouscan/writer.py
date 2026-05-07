@@ -260,7 +260,7 @@ def write_pairs_with_ta_annotation(
     pairs_written = 0
     skipped = 0
 
-    with open(output_file, "w") as fl:
+    with open(output_file, "w", newline="") as fl:
         writer = None
 
         for cluster_id, cluster in sorted(clusters.items()):
