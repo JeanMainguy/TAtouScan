@@ -60,14 +60,12 @@ pip install -e .
 
 TAtouScan requires a database directory containing HMM profiles and reference statistics.
 
-> **TODO**: Upload the updated database to Zenodo and add the download link here.
 
-<!-- Once available, download and extract with:
+Download the database and extract it with:
 ```bash
-wget https://zenodo.org/records/XXXXXXX/files/tatouscan_db.tar.gz
+wget https://zenodo.org/records/20059258/files/tatouscan_db.tar.gz
 tar -xzf tatouscan_db.tar.gz
 ```
--->
 
 The database directory must contain the following four files:
 
