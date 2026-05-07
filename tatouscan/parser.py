@@ -16,7 +16,7 @@ def parse_gff_attributes(attribute_str: str) -> Dict[str, str]:
     attributes_dict: Dict[str, str] = {}
     for attribute in attributes:
         try:
-            (key, value) = attribute.strip().split("=")
+            key, value = attribute.strip().split("=")
             attributes_dict[key.upper()] = value
         except ValueError:
             pass  # we assume that it is a strange, but useless field for our analysis
