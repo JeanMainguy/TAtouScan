@@ -163,7 +163,7 @@ def write_gene_with_ta_annotation(
         if detailed
         else {k: v for k, v in _SCORE_NULL_FULL.items() if k not in _SCORE_DETAIL_KEYS}
     )
-    with open(output_file, "w") as fl:
+    with open(output_file, "w", newline="") as fl:
         writer = None
         for contig_name, cdss in contig_name_and_cdss_with_ta_hit:
             for cds in cdss:
