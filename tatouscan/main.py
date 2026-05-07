@@ -11,12 +11,17 @@ from pathlib import Path
 from tatouscan.annotation import annotate_cdss, parse_hmm_db_info
 from tatouscan.system import group_cdss_with_ta_annotation
 from tatouscan.writer import write_gene_with_ta_annotation
+from tatouscan.scoring import load_reference_statistics, load_known_pairs
+from tatouscan.database import load_db
 
 logger = logging.getLogger(__name__)
 
 app = typer.Typer(
-    help="TAtouScan: A tool for identifying toxin-antitoxin (TA) systems.",
+    name="TAtouScan",
+    help=f"TAtouScan {__version__}: A tool for identifying toxin-antitoxin (TA) systems.",
     context_settings={"help_option_names": ["-h", "--help"]},
+    add_completion=False,
+    rich_markup_mode="rich",
 )
 
 
@@ -35,6 +40,8 @@ def main(
             "--gff",
             help="Path to the GFF file containing gene annotations.",
             exists=True,
+            file_okay=True,
+            dir_okay=False,
         ),
     ],
     faa: Annotated[
@@ -43,31 +50,34 @@ def main(
             "--faa",
             help="Path to the FASTA file containing protein sequences.",
             exists=True,
+            file_okay=True,
+            dir_okay=False,
         ),
     ],
-    hmm_db: Annotated[
+    db: Annotated[
         Path,
         typer.Option(
-            "--hmm_db",
-            help="Path to the HMM database file.",
+            "--db",
+            help=(
+                "Path to the TAtouScan database directory containing: "
+                "ta.hmm, hmm_info.tsv, family_statistics.tsv, known_pairs.tsv. "
+                "Typically obtained by extracting the distributed .tar.gz archive."
+            ),
             exists=True,
+            file_okay=False,
+            dir_okay=True,
         ),
     ],
-    hmm_info: Annotated[
+    outdir: Annotated[
         Path,
         typer.Option(
-            "--hmm_info",
-            help="Path to a TSV containing informaiton on the HMM profile.",
-            exists=True,
+            "-o",
+            "--outdir",
+            help="Directory where output TSV files will be written.",
+            file_okay=False,
+            dir_okay=True,
         ),
-    ],
-    output_file: Annotated[
-        Path,
-        typer.Option(
-            "--output",
-            help="Path to a TSV file to write the gene with TA annotation.",
-        ),
-    ] = Path("tatouscan_results.tsv"),
+    ] = Path("tatouscan_results"),
     max_distance: Annotated[
         int,
         typer.Option(
@@ -80,6 +90,17 @@ def main(
             help="Maximum E-value for TA hits to be considered.",
         ),
     ] = 0.005,
+    detailed: Annotated[
+        bool,
+        typer.Option(
+            "--detailed",
+            help=(
+                "Write all per-source HMM columns (TASmania, TADB3, Other) and "
+                "raw Z-score columns in the output files. "
+                "By default only the single best HMM hit and the final score are written."
+            ),
+        ),
+    ] = False,
     version: Annotated[
         Optional[bool],
         typer.Option(
@@ -100,15 +121,17 @@ def main(
 
     """Main entry point for TAtouScan CLI."""
     typer.echo(
-        "TAtouScan CLI is under development. Run `tatouscan --help` for available commands.",
+        "TAtouScan CLI is under development. Run `tatouscan --help` for available parameters.",
         color=True,
     )
     cds_protein_attr = ["id", "protein_id", "name", "locus_tag"]
 
+    tatouscan_db = load_db(db)
+
     contig_name_and_cdss = annotate_cdss(
         gff_file=gff,
         faa_file=faa,
-        hmm_db=hmm_db,
+        hmm_db=tatouscan_db.hmm_db,
         e_value_threshold=max_e_value,
         matching_attributes=cds_protein_attr,
     )
@@ -117,10 +140,23 @@ def main(
         contig_name_and_cdss, max_distance
     )
 
-    hmm_name_to_info = parse_hmm_db_info(hmm_info_file=hmm_info)
+    hmm_name_to_info = parse_hmm_db_info(hmm_info_file=tatouscan_db.hmm_info)
+
+    ref_stats = load_reference_statistics(tatouscan_db.ref_stats)
+    known_pairs_set = load_known_pairs(tatouscan_db.known_pairs)
+
+    outdir.mkdir(parents=True, exist_ok=True)
+    output_file = outdir / "tatouscan_results.tsv"
+    output_pairs_file = outdir / "tatouscan_results_pairs.tsv"
 
     write_gene_with_ta_annotation(
-        contig_name_and_cdss_with_ta_hit, hmm_name_to_info, output_file
+        contig_name_and_cdss_with_ta_hit,
+        hmm_name_to_info,
+        output_file,
+        ref_stats,
+        known_pairs_set,
+        output_pairs_file=output_pairs_file,
+        detailed=detailed,
     )
 
 
