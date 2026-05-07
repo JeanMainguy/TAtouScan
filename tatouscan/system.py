@@ -3,7 +3,6 @@ import logging
 
 from tatouscan.models import Cds
 
-
 logger = logging.getLogger(__name__)
 
 
