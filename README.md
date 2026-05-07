@@ -1,3 +1,5 @@
+[![PyPI version](https://badge.fury.io/py/TAtouScan.svg?cache-control=no-cache)](https://badge.fury.io/py/TAtouScan)
+
 # TAtouScan
 
 **TAtouScan** is a command-line tool designed to identify **toxin-antitoxin (TA) systems** in genomes and metagenomes. 
@@ -5,52 +7,20 @@
 
 ## Installation
 
-### Option 1: Install with `pip` 
-
-1. **Clone the repository:**
+TAtouScan is available on [PyPI](https://pypi.org/project/TAtouScan/). It is recommended to install it in a virtual environment:
 
 ```bash
-git clone https://github.com/JeanMainguy/TAtouScan.git
-cd TAtouScan
+python -m venv tatouscan-env
+source tatouscan-env/bin/activate
+pip install TAtouScan
 ```
 
-2. **Create and activate a virtual environment:**
+Alternatively, using `conda` for environment management:
 
 ```bash
-# Create a virtual environment
-python -m venv venv
-
-# Activate the virtual environment
-# On Linux/macOS:
-source venv/bin/activate
-
-```
-
-1. **Install TAtouScan:**
-
-```bash
-pip install .
-```
-
----
-
-### Option 2: Install using `conda`
-
-If you prefer using `conda`, you can create a dedicated environment as follows:
-
-```bash
-# Create a new conda environment with Python
 conda create -n tatouscan python=3.12
-
-# Activate the environment
 conda activate tatouscan
-
-# Clone the repository
-git clone https://github.com/JeanMainguy/TAtouScan.git
-cd TAtouScan
-
-# Install TAtouScan
-pip install -e .
+pip install TAtouScan
 ```
 > [!NOTE]
 > TAtouScan is not yet available via `bioconda`. The above method combines `conda` for environment management and `pip` for installation.
