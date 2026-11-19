@@ -50,6 +50,25 @@ _SCORE_NULL_FULL: Dict[str, Any] = {
 }
 
 
+# Pfam annotation of the HMM profiles: output column -> hmm_info.tsv column.
+# These columns are optional in hmm_info.tsv (absent from databases built before
+# the Pfam annotation); missing or empty values are written as None.
+PFAM_INFO_COLUMNS: Dict[str, str] = {
+    "hmm_pfam_accession": "pfam_accession",
+    "hmm_pfam_name": "pfam_name",
+    "hmm_pfam_description": "pfam_description",
+    "hmm_pfam_hits": "pfam_hits",
+}
+
+
+def get_pfam_info(info: Dict[str, str]) -> Dict[str, Optional[str]]:
+    """Return the Pfam annotation of an HMM profile from its hmm_info.tsv row."""
+    return {
+        out_col: info.get(info_col) or None
+        for out_col, info_col in PFAM_INFO_COLUMNS.items()
+    }
+
+
 def get_best_hit(ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str]]):
     """
     Get the best hit from a list of TaHit objects.
@@ -61,25 +80,20 @@ def get_best_hit(ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str]]):
             "hmm_score": None,
             "hmm_evalue": None,
             "hmm_description": None,
+            **get_pfam_info({}),
         }
 
     # Sort hits by e-value and return the first one
     best_hit = min(ta_hits, key=lambda hit: hit.evalue)
+    info = hmm_db_info.get(best_hit.ta_name, {})
 
-    hit_info: Dict[str, Any] = {
+    return {
         "hmm_name": best_hit.ta_name,
         "hmm_score": best_hit.score,
         "hmm_evalue": best_hit.evalue,
-        "hmm_description": None,
+        "hmm_description": info.get("supplementary_info"),
+        **get_pfam_info(info),
     }
-
-    # Merge in additional metadata from hmm_db_info using ta_name as key
-    if best_hit.ta_name in hmm_db_info:
-        hit_info["hmm_description"] = hmm_db_info[best_hit.ta_name][
-            "supplementary_info"
-        ]
-
-    return hit_info
 
 
 def _summarise_ta_hits_simple(
@@ -95,13 +109,14 @@ def _summarise_ta_hits_simple(
         "hmm_evalue": best_hit.evalue,
         "hmm_source": info.get("source"),
         "hmm_description": info.get("supplementary_info"),
+        **get_pfam_info(info),
     }
 
 
 def summarise_ta_hits(ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str]]):
 
     best_hit = min(ta_hits, key=lambda hit: hit.evalue)
-    gene_type = hmm_db_info[best_hit.ta_name]["type"]
+    gene_type = hmm_db_info.get(best_hit.ta_name, {}).get("type")
 
     tadb_hits = [
         ta_hit
