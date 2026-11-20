@@ -1,12 +1,16 @@
 from pathlib import Path
 from typing import DefaultDict, Dict, List
 from collections import defaultdict
+from urllib.parse import unquote
 from tatouscan.utils import read_file
 from tatouscan.models import Cds, Strand, Frame
 
 
 def parse_gff_attributes(attribute_str: str) -> Dict[str, str]:
     """Parses the gff attribute's line and outputs the attributes_get in a dict structure.
+
+    Values are percent-decoded as defined by the GFF3 specification
+    (e.g. ``toxin%2C RelE family`` becomes ``toxin, RelE family``).
 
     :param attribute_str: The attribute line from the GFF file.
     :return: A dictionary of the attributes.
@@ -16,8 +20,9 @@ def parse_gff_attributes(attribute_str: str) -> Dict[str, str]:
     attributes_dict: Dict[str, str] = {}
     for attribute in attributes:
         try:
-            key, value = attribute.strip().split("=")
-            attributes_dict[key.upper()] = value
+            # Split on the first "=" only: some tools do not escape "=" in values
+            key, value = attribute.strip().split("=", 1)
+            attributes_dict[key.upper()] = unquote(value)
         except ValueError:
             pass  # we assume that it is a strange, but useless field for our analysis
 

@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Scoring**: when several toxin–antitoxin pairs in a cluster tie on score, the reported pair (and its `pair_is_known` value) is now chosen by genomic position instead of set iteration order, so results are reproducible across runs on the same data.
 - **GFF parsing**: GFF files with a `##FASTA` section (default output of Prokka and Bakta), blank lines, or a CDS phase of `.` no longer crash TAtouScan. Lines without 9 columns and CDSs with a strand other than `+` or `-` now raise an error that gives the line number.
 - **Protein length**: `length_aa` (and the toxin and antitoxin sizes used for scoring) is now the length of the protein sequence in the FAA file, with any trailing `*` removed. It was previously computed from the GFF coordinates, which counted the stop codon, so lengths were 1 aa too long and size Z-scores were slightly shifted compared with the reference statistics. Scores can change slightly.
+- **Empty output files**: both output files now always start with their header, even when no gene has a TA hit. They were previously written as empty (0-byte) files, which table readers such as pandas or R fail to load. The column order of `tatouscan_results.tsv` is also fixed: `ta_system_id` always comes before `is_single_gene`, whereas the order used to depend on whether the first gene was in a system.
+- **GFF attributes**: percent-encoded characters in attribute values are now decoded (e.g. `product=toxin%2C RelE family` becomes `toxin, RelE family`), and a value containing an unescaped `=` is kept instead of being dropped.
 
 ## [0.2.0] – 2026-05-07
 

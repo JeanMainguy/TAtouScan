@@ -192,6 +192,53 @@ def summarise_ta_hits(ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str
     return hit_info
 
 
+def _hit_columns(detailed: bool) -> List[str]:
+    """Columns of the HMM hit summary of a gene, in output order."""
+    summarise = summarise_ta_hits if detailed else _summarise_ta_hits_simple
+    return list(summarise([TaHit("", "", 0.0, 0.0)], {}).keys())
+
+
+def _score_columns(detailed: bool) -> List[str]:
+    """Columns of the score of a TA system or pair, in output order."""
+    return [k for k in _SCORE_NULL_FULL if detailed or k not in _SCORE_DETAIL_KEYS]
+
+
+def gene_output_columns(detailed: bool = False, with_score: bool = True) -> List[str]:
+    """Columns of the gene output file, in output order."""
+    columns = [
+        "contig_name",
+        "gene_id",
+        "start",
+        "end",
+        "strand",
+        "length_aa",
+        "product",
+        "ta_system_id",
+        "is_single_gene",
+    ]
+    columns += _hit_columns(detailed)
+    if with_score:
+        columns += _score_columns(detailed)
+    return columns
+
+
+def pair_output_columns(detailed: bool = False) -> List[str]:
+    """Columns of the pairs output file, in output order."""
+    hit_columns = _hit_columns(detailed)
+    columns = ["ta_system_id", "contig_name"]
+    for role in ("toxin", "antitoxin"):
+        columns += [
+            f"{role}_{col}"
+            for col in ("gene_id", "start", "end", "strand", "product", "length_aa")
+        ]
+        columns += [f"{role}_{col}" for col in hit_columns]
+    columns.append("intergenic_distance")
+    columns += _score_columns(detailed)
+    if not detailed:
+        columns = [col for col in columns if col not in _PAIRS_DETAIL_KEYS]
+    return columns
+
+
 def write_gene_with_ta_annotation(
     contig_name_and_cdss_with_ta_hit: Generator[tuple[str, list[Cds]], Any, None],
     hmm_db_info: Dict[str, Dict[str, str]],
@@ -214,8 +261,15 @@ def write_gene_with_ta_annotation(
         if detailed
         else {k: v for k, v in _SCORE_NULL_FULL.items() if k not in _SCORE_DETAIL_KEYS}
     )
+    # The header is written even when no gene has a TA hit, so that the
+    # output file can always be read as a table.
     with open(output_file, "w", newline="") as fl:
-        writer = None
+        writer = csv.DictWriter(
+            fl,
+            fieldnames=gene_output_columns(detailed, with_score=ref_stats is not None),
+            delimiter="\t",
+        )
+        writer.writeheader()
         for contig_name, cdss in contig_name_and_cdss_with_ta_hit:
             for cds in cdss:
 
@@ -268,12 +322,6 @@ def write_gene_with_ta_annotation(
                     else:
                         ta_gene_info.update(_score_null)
 
-                if writer is None:
-                    writer = csv.DictWriter(
-                        fl, fieldnames=ta_gene_info.keys(), delimiter="\t"
-                    )
-                    writer.writeheader()
-
                 writer.writerow(ta_gene_info)
 
     logger.info(f"Finished writing genes with TA annotations to file '{output_file}'")
@@ -312,7 +360,10 @@ def write_pairs_with_ta_annotation(
     skipped = 0
 
     with open(output_file, "w", newline="") as fl:
-        writer = None
+        writer = csv.DictWriter(
+            fl, fieldnames=pair_output_columns(detailed), delimiter="\t"
+        )
+        writer.writeheader()
 
         for cluster_id, cluster in sorted(clusters.items()):
             genes = list(cluster.genes)
@@ -393,10 +444,6 @@ def write_pairs_with_ta_annotation(
 
                 if not detailed:
                     row = {k: v for k, v in row.items() if k not in _PAIRS_DETAIL_KEYS}
-
-                if writer is None:
-                    writer = csv.DictWriter(fl, fieldnames=row.keys(), delimiter="\t")
-                    writer.writeheader()
 
                 writer.writerow(row)
                 pairs_written += 1
