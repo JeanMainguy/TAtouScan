@@ -23,11 +23,9 @@ def faa_file(tmp_path: Path) -> Path:
     Fixture for a protein FASTA file.
     """
     faa_file: Path = tmp_path / "test.faa"
-    faa_file.write_text(
-        """>protein1
+    faa_file.write_text(""">protein1
     MTEITAAMVKELRESTGAGMMDCKNALSETQHEFSQVLKAKLAEQAERYDDMAAAMKAVTEQGHELSNEER
-    """
-    )
+    """)
     return faa_file
 
 
@@ -37,15 +35,13 @@ def hmm_db(tmp_path: Path) -> Path:
     Fixture for an HMM database file.
     """
     hmm_db: Path = tmp_path / "test.hmm"
-    hmm_db.write_text(
-        """HMMER3/f [3.1b2 | March 2015]
+    hmm_db.write_text("""HMMER3/f [3.1b2 | March 2015]
     NAME  TestHMM
     ACC   TEST00001
     DESC  Test HMM
     LENG  50
     ALPH  amino
-    """
-    )
+    """)
     return hmm_db
 
 
