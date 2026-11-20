@@ -30,10 +30,21 @@ def get_cdss_from_gff_file(gff_file: Path):
     contig_id_to_cds: DefaultDict[str, List[Cds]] = defaultdict(list)
     with read_file(gff_file) as gff_fh:
 
-        for line in gff_fh:
+        for line_number, line in enumerate(gff_fh, start=1):
 
-            if line.startswith("#"):
+            if line.startswith("##FASTA"):
+                # Sequences appended after the annotations (e.g. Prokka, Bakta)
+                break
+
+            if line.startswith("#") or not line.strip():
                 continue
+
+            fields = line.rstrip("\r\n").split("\t")
+            if len(fields) != 9:
+                raise ValueError(
+                    f"Line {line_number} of {gff_file} has {len(fields)} tab-separated "
+                    f"columns instead of 9: {line.rstrip()!r}"
+                )
 
             (
                 contig_id,
@@ -45,7 +56,7 @@ def get_cdss_from_gff_file(gff_file: Path):
                 strand,
                 frame,
                 attributes,
-            ) = line.split("\t")
+            ) = fields
 
             if feature in ["CDS", "region"]:
 
@@ -68,12 +79,19 @@ def get_cdss_from_gff_file(gff_file: Path):
                             f"Missing ID attribute in CDS feature: {line}, of file {gff_file}"
                         )
 
+                    if strand not in ("+", "-"):
+                        raise ValueError(
+                            f"CDS '{gene_id}' at line {line_number} of {gff_file} has "
+                            f"strand '{strand}': expected '+' or '-'."
+                        )
+
                     cds = Cds(
                         id=gene_id,
                         contig_id=contig_id,
                         coordinates=[(int(start), int(stop))],
                         strand=Strand(strand),
-                        frame=Frame(int(frame)),
+                        # Some tools write "." instead of 0/1/2 as CDS phase
+                        frame=None if frame == "." else Frame(int(frame)),
                         product=product,
                         locus_tag=locus_tag,
                         name=name,
