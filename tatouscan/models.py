@@ -90,7 +90,7 @@ class Cds(Gene):
         contig_id: str,
         coordinates: list[Tuple[int, int]],
         strand: Strand,
-        frame: Frame,
+        frame: Optional[Frame],
         product: Optional[str] = None,
         locus_tag: Optional[str] = None,
         name: Optional[str] = None,
