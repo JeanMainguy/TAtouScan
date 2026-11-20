@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Pfam annotation of the HMM profiles**: `hmm_info.tsv` gains `pfam_accession`, `pfam_name`, `pfam_description`, `pfam_evalue`, `pfam_coverage` and `pfam_hits` columns (Pfam 38.2, consensus sequence of each profile searched with `hmmscan`, E-value ≤ 1e-3). Requires the updated database.
-- Output files report the Pfam annotation of the best HMM profile: `hmm_pfam_name` (closest Pfam family) and `hmm_pfam_hits` (all significant Pfam families), prefixed with `toxin_` / `antitoxin_` in the pairs file. `--detailed` adds `hmm_pfam_accession`, `hmm_pfam_description` and the Pfam family name of each per-source best hit.
+- Output files report the Pfam annotation of the best HMM profile: `hmm_pfam_name` (closest Pfam family) and `hmm_pfam_families` (names of all significant Pfam families), prefixed with `toxin_` / `antitoxin_` in the pairs file. `--detailed` adds `hmm_pfam_accession`, `hmm_pfam_description`, `hmm_pfam_hits` (all families with E-values and positions) and the Pfam family name of each per-source best hit.
 - **Database version check**: the database now contains a `version.txt` file, checked at startup. TAtouScan stops with an explanatory error and a download link if the database is older than the minimum supported version.
 
 ### Changed

@@ -50,20 +50,32 @@ _SCORE_NULL_FULL: Dict[str, Any] = {
 }
 
 
-# Pfam annotation of the HMM profiles: output column -> hmm_info.tsv column.
+# Pfam annotation of the HMM profiles (output columns, in output order).
 # Empty values (profile without significant Pfam hit) are written as None.
-PFAM_INFO_COLUMNS: Dict[str, str] = {
-    "hmm_pfam_name": "pfam_name",
-    "hmm_pfam_accession": "pfam_accession",
-    "hmm_pfam_description": "pfam_description",
-    "hmm_pfam_hits": "pfam_hits",
-}
+#   hmm_pfam_name         closest Pfam family            (hmm_info.tsv: pfam_name)
+#   hmm_pfam_families     all significant family names   (derived from pfam_hits)
+#   hmm_pfam_accession    closest family accession       (hmm_info.tsv: pfam_accession)
+#   hmm_pfam_description  closest family description     (hmm_info.tsv: pfam_description)
+#   hmm_pfam_hits         all significant families with  (hmm_info.tsv: pfam_hits)
+#                         E-values and positions
+PFAM_INFO_COLUMNS: tuple[str, ...] = (
+    "hmm_pfam_name",
+    "hmm_pfam_families",
+    "hmm_pfam_accession",
+    "hmm_pfam_description",
+    "hmm_pfam_hits",
+)
 
 # Pfam columns written for the best hit in default output; the others are --detailed only.
-PFAM_DEFAULT_COLUMNS: frozenset[str] = frozenset({"hmm_pfam_name", "hmm_pfam_hits"})
+PFAM_DEFAULT_COLUMNS: frozenset[str] = frozenset({"hmm_pfam_name", "hmm_pfam_families"})
 
 # Pfam columns written for each per-source best hit (--detailed only).
 PFAM_PER_SOURCE_COLUMNS: frozenset[str] = frozenset({"hmm_pfam_name"})
+
+
+def pfam_family_names(pfam_hits: str) -> str:
+    """Reduce ``NAME(ACC):E-value:positions;...`` to ``NAME;...``."""
+    return ";".join(hit.split("(", 1)[0] for hit in pfam_hits.split(";") if hit)
 
 
 def get_pfam_info(
@@ -73,10 +85,18 @@ def get_pfam_info(
 
     :param columns: output columns to keep (all Pfam columns if None).
     """
+    pfam_hits = info.get("pfam_hits") or ""
+    values = {
+        "hmm_pfam_name": info.get("pfam_name"),
+        "hmm_pfam_families": pfam_family_names(pfam_hits),
+        "hmm_pfam_accession": info.get("pfam_accession"),
+        "hmm_pfam_description": info.get("pfam_description"),
+        "hmm_pfam_hits": pfam_hits,
+    }
     return {
-        out_col: info.get(info_col) or None
-        for out_col, info_col in PFAM_INFO_COLUMNS.items()
-        if columns is None or out_col in columns
+        col: values[col] or None
+        for col in PFAM_INFO_COLUMNS
+        if columns is None or col in columns
     }
 
 

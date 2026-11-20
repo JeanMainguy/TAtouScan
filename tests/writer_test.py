@@ -8,6 +8,7 @@ from tatouscan.writer import (
     _summarise_ta_hits_simple,
     get_best_hit,
     get_pfam_info,
+    pfam_family_names,
     summarise_ta_hits,
 )
 
@@ -40,11 +41,24 @@ HMM_DB_INFO_WITH_PFAM: Dict[str, Dict[str, str]] = {
 def test_get_pfam_info_with_annotation():
     pfam = get_pfam_info(HMM_DB_INFO_WITH_PFAM["T.51159"])
     assert pfam == {
-        "hmm_pfam_accession": "PF05016.22",
         "hmm_pfam_name": "ParE_toxin",
+        "hmm_pfam_families": "ParE_toxin;YoeB_toxin",
+        "hmm_pfam_accession": "PF05016.22",
         "hmm_pfam_description": "ParE toxin of type II toxin-antitoxin system, parDE",
         "hmm_pfam_hits": "ParE_toxin(PF05016.22):9.4e-10:5-87;YoeB_toxin(PF06769.21):6.8e-09:3-86",
     }
+    assert list(pfam) == list(PFAM_INFO_COLUMNS)
+
+
+def test_pfam_family_names():
+    assert pfam_family_names("") == ""
+    assert pfam_family_names("PIN(PF01850.28):5.4e-24:101-220") == "PIN"
+    assert (
+        pfam_family_names(
+            "TPR_12(PF13424.13):3.4e-15:649-716,732-797;HTH_5(PF01022.27):5.5e-19:266-311"
+        )
+        == "TPR_12;HTH_5"
+    )
 
 
 def test_get_pfam_info_empty_values_are_none():
@@ -56,7 +70,7 @@ def test_get_pfam_info_empty_values_are_none():
 def test_get_pfam_info_column_subset():
     assert get_pfam_info(HMM_DB_INFO_WITH_PFAM["T.51159"], PFAM_DEFAULT_COLUMNS) == {
         "hmm_pfam_name": "ParE_toxin",
-        "hmm_pfam_hits": "ParE_toxin(PF05016.22):9.4e-10:5-87;YoeB_toxin(PF06769.21):6.8e-09:3-86",
+        "hmm_pfam_families": "ParE_toxin;YoeB_toxin",
     }
 
 
@@ -67,20 +81,21 @@ HITS = [
 
 
 def test_summarise_simple_default_pfam_columns():
-    """Default output: only the closest Pfam name and the list of all Pfam hits."""
+    """Default output: only the closest Pfam name and the names of all Pfam families."""
     summary = _summarise_ta_hits_simple(HITS, HMM_DB_INFO_WITH_PFAM)
     assert summary["hmm_name"] == "T.51159"
     assert summary["gene_type"] == "Toxin"
     assert summary["hmm_pfam_name"] == "ParE_toxin"
-    assert summary["hmm_pfam_hits"].startswith("ParE_toxin(PF05016.22)")
-    assert "hmm_pfam_accession" not in summary
-    assert "hmm_pfam_description" not in summary
+    assert summary["hmm_pfam_families"] == "ParE_toxin;YoeB_toxin"
+    for detail_col in ("hmm_pfam_accession", "hmm_pfam_description", "hmm_pfam_hits"):
+        assert detail_col not in summary
 
 
 def test_summarise_simple_detailed_pfam_columns():
     summary = _summarise_ta_hits_simple(HITS, HMM_DB_INFO_WITH_PFAM, detailed=True)
     assert set(PFAM_INFO_COLUMNS) <= set(summary)
     assert summary["hmm_pfam_accession"] == "PF05016.22"
+    assert summary["hmm_pfam_hits"].startswith("ParE_toxin(PF05016.22):9.4e-10")
 
 
 def test_summarise_detailed_is_superset_of_default():
