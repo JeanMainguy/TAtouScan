@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from tatouscan.annotation import annotate_sequences_from_faa_file
+from tatouscan.annotation import annotate_cdss, annotate_sequences_from_faa_file
 from tatouscan.models import TaHit
 from unittest import mock
 from typing import Generator, List
@@ -82,7 +82,7 @@ def test_find_ta_hits_valid_input(
     Test find_ta_hits with valid inputs and one hit, using a mock for hmmsearch.
     """
 
-    result = annotate_sequences_from_faa_file(faa_file, hmm_db)
+    result, lengths = annotate_sequences_from_faa_file(faa_file, hmm_db)
     assert result is not None
     assert len(result) == 1
     assert "protein1" in result
@@ -92,6 +92,7 @@ def test_find_ta_hits_valid_input(
     assert result["protein1"][0].ta_name == "TestHMM"
     assert result["protein1"][0].score == 100.0
     assert result["protein1"][0].evalue == 0.001
+    assert lengths == {"protein1": 71}
 
 
 def test_find_ta_hits_no_sequences(tmp_path: Path, hmm_db: Path) -> None:
@@ -115,5 +116,39 @@ def test_find_ta_hits_no_hits(
     # Mock no hits
     mock_hmmsearch.return_value = []
 
-    result = annotate_sequences_from_faa_file(faa_file, hmm_db)
+    result, lengths = annotate_sequences_from_faa_file(faa_file, hmm_db)
     assert result == {}
+    assert lengths == {}
+
+
+def test_find_ta_hits_protein_length_excludes_stop_codon(
+    tmp_path: Path, hmm_db: Path, mock_hmmsearch: mock.Mock
+) -> None:
+    """
+    The trailing stop codon written by Prodigal (``*``) is not counted.
+    """
+    faa_with_stop: Path = tmp_path / "with_stop.faa"
+    sequence = "MTEITAAMVKELRESTGAGMMDCKNALSETQHEFSQVLKAKLAEQAERYDDMAAAMKAVTEQGHELSNEER"
+    faa_with_stop.write_text(f">protein1\n{sequence}*\n>protein2\n{sequence}*\n")
+
+    _, lengths = annotate_sequences_from_faa_file(faa_with_stop, hmm_db)
+
+    # protein2 has no hit, so its length is not stored
+    assert lengths == {"protein1": len(sequence)}
+
+
+def test_annotate_cdss_sets_protein_length(
+    tmp_path: Path, faa_file: Path, hmm_db: Path, mock_hmmsearch: mock.Mock
+) -> None:
+    """
+    The protein length comes from the FAA file, not from the GFF coordinates.
+    """
+    gff_file: Path = tmp_path / "test.gff"
+    # 1-216 is 72 codons: 71 aa + stop codon
+    gff_file.write_text("contig1\tProdigal\tCDS\t1\t216\t.\t+\t0\tID=protein1\n")
+
+    contig_name_and_cdss = list(annotate_cdss(gff_file, faa_file, hmm_db))
+
+    cds = contig_name_and_cdss[0][1][0]
+    assert cds.protein_length == 71
+    assert cds.length_aa == 71

@@ -226,7 +226,7 @@ def write_gene_with_ta_annotation(
                 ta_gene_info["start"] = cds.start
                 ta_gene_info["end"] = cds.stop
                 ta_gene_info["strand"] = cds.strand.value
-                ta_gene_info["length_aa"] = (cds.stop - cds.start + 1) // 3
+                ta_gene_info["length_aa"] = cds.length_aa
                 ta_gene_info["product"] = cds.product
 
                 if cds.ta_cluster:
@@ -330,8 +330,8 @@ def write_pairs_with_ta_annotation(
                 contig_name = toxin.contig_id
 
                 # Structural features
-                toxin_length_aa = (toxin.stop - toxin.start + 1) // 3
-                antitoxin_length_aa = (antitoxin.stop - antitoxin.start + 1) // 3
+                toxin_length_aa = toxin.length_aa
+                antitoxin_length_aa = antitoxin.length_aa
 
                 upstream = toxin if toxin.start <= antitoxin.start else antitoxin
                 downstream = antitoxin if toxin.start <= antitoxin.start else toxin
