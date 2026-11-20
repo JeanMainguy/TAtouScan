@@ -70,6 +70,11 @@ families with a full-sequence E-value ≤ 1e-3 are kept. This adds the following
 Several Pfam families are often reported for one profile: either several domains of a multi-domain
 protein (different positions) or closely related families of the same clan (overlapping positions).
 
+The approach was validated on the TASmania profiles, comparing with their original Pfam annotation
+(Pfam 31, profile–profile comparison with PRC). For the 547 profiles whose TASmania annotation is
+significant (p ≤ 1e-3), the same Pfam family is recovered every time: as the closest hit for 541 profiles
+and among the other significant hits for the remaining 6.
+
 
 ## Usage
 
