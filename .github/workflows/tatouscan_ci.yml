@@ -12,28 +12,36 @@ on:
     
 jobs:
   build:
-    defaults:
-      run:
-        shell: bash -el {0}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest']
-        python-version: [3.10, 3.13] 
+        # Quoted: unquoted 3.10 is read by YAML as the number 3.1
+        python-version: ['3.10', '3.13']
 
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v4
-  
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Check Python version
+      run: |
+        python --version
+        python -c "import sys; v = '.'.join(map(str, sys.version_info[:2])); assert v == '${{ matrix.python-version }}', v"
+
     - name: Install TAtouScan
       run: |
-        pip install .
+        python -m pip install .
         tatouscan --help
 
     - name: Lint with flake8
       run: |
-        pip install flake8
+        python -m pip install flake8
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
@@ -41,8 +49,8 @@ jobs:
 
     - name: Test with pytest
       run: |
-        pip install pytest pytest-cov
-        pytest --cov=tatouscan --cov-report=html --cov-report=xml
+        python -m pip install pytest pytest-cov
+        python -m pytest --cov=tatouscan --cov-report=html --cov-report=xml
 
     # - name: Generate coverage badge
     #   run: |
