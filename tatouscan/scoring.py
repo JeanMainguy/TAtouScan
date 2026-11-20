@@ -243,7 +243,10 @@ def score_cluster(
         "score": None,
     }
 
-    genes = list(cluster.genes)
+    # cluster.genes is a set whose iteration order depends on object hashes, so
+    # sort by genomic position to make tie-breaking between equally scored
+    # pairs (and hence pair_is_known) reproducible across runs.
+    genes = sorted(cluster.genes, key=lambda g: (g.contig_id, g.start, g.stop, g.id))
     types = [get_gene_type(g, hmm_db_info) for g in genes]
     toxins: List[Cds] = [g for g, t in zip(genes, types) if t == "Toxin"]
     antitoxins: List[Cds] = [g for g, t in zip(genes, types) if t == "Antitoxin"]
@@ -270,9 +273,9 @@ def score_pair(
     known_pairs: Optional[KnownPairs] = None,
 ) -> Dict[str, Any]:
     """Score a single (toxin, antitoxin) gene pair."""
-    # Protein length in amino acids from 1-based inclusive nucleotide coordinates
-    toxin_size = (toxin.stop - toxin.start + 1) // 3
-    at_size = (antitoxin.stop - antitoxin.start + 1) // 3
+    # Protein length in amino acids (from the protein sequence when known)
+    toxin_size = toxin.length_aa
+    at_size = antitoxin.length_aa
 
     # Intergenic distance (negative = overlap), matching reference formula:
     # downstream.genomic_left − upstream.genomic_right

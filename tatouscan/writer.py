@@ -50,6 +50,56 @@ _SCORE_NULL_FULL: Dict[str, Any] = {
 }
 
 
+# Pfam annotation of the HMM profiles (output columns, in output order).
+# Empty values (profile without significant Pfam hit) are written as None.
+#   hmm_pfam_name         closest Pfam family            (hmm_info.tsv: pfam_name)
+#   hmm_pfam_families     all significant family names   (derived from pfam_hits)
+#   hmm_pfam_accession    closest family accession       (hmm_info.tsv: pfam_accession)
+#   hmm_pfam_description  closest family description     (hmm_info.tsv: pfam_description)
+#   hmm_pfam_hits         all significant families with  (hmm_info.tsv: pfam_hits)
+#                         E-values and positions
+PFAM_INFO_COLUMNS: tuple[str, ...] = (
+    "hmm_pfam_name",
+    "hmm_pfam_families",
+    "hmm_pfam_accession",
+    "hmm_pfam_description",
+    "hmm_pfam_hits",
+)
+
+# Pfam columns written for the best hit in default output; the others are --detailed only.
+PFAM_DEFAULT_COLUMNS: frozenset[str] = frozenset({"hmm_pfam_name", "hmm_pfam_families"})
+
+# Pfam columns written for each per-source best hit (--detailed only).
+PFAM_PER_SOURCE_COLUMNS: frozenset[str] = frozenset({"hmm_pfam_name"})
+
+
+def pfam_family_names(pfam_hits: str) -> str:
+    """Reduce ``NAME(ACC):E-value:positions;...`` to ``NAME;...``."""
+    return ";".join(hit.split("(", 1)[0] for hit in pfam_hits.split(";") if hit)
+
+
+def get_pfam_info(
+    info: Dict[str, str], columns: Optional[frozenset[str]] = None
+) -> Dict[str, Optional[str]]:
+    """Return the Pfam annotation of an HMM profile from its hmm_info.tsv row.
+
+    :param columns: output columns to keep (all Pfam columns if None).
+    """
+    pfam_hits = info.get("pfam_hits") or ""
+    values = {
+        "hmm_pfam_name": info.get("pfam_name"),
+        "hmm_pfam_families": pfam_family_names(pfam_hits),
+        "hmm_pfam_accession": info.get("pfam_accession"),
+        "hmm_pfam_description": info.get("pfam_description"),
+        "hmm_pfam_hits": pfam_hits,
+    }
+    return {
+        col: values[col] or None
+        for col in PFAM_INFO_COLUMNS
+        if columns is None or col in columns
+    }
+
+
 def get_best_hit(ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str]]):
     """
     Get the best hit from a list of TaHit objects.
@@ -61,31 +111,32 @@ def get_best_hit(ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str]]):
             "hmm_score": None,
             "hmm_evalue": None,
             "hmm_description": None,
+            **get_pfam_info({}, PFAM_PER_SOURCE_COLUMNS),
         }
 
     # Sort hits by e-value and return the first one
     best_hit = min(ta_hits, key=lambda hit: hit.evalue)
+    info = hmm_db_info.get(best_hit.ta_name, {})
 
-    hit_info: Dict[str, Any] = {
+    return {
         "hmm_name": best_hit.ta_name,
         "hmm_score": best_hit.score,
         "hmm_evalue": best_hit.evalue,
-        "hmm_description": None,
+        "hmm_description": info.get("supplementary_info"),
+        **get_pfam_info(info, PFAM_PER_SOURCE_COLUMNS),
     }
-
-    # Merge in additional metadata from hmm_db_info using ta_name as key
-    if best_hit.ta_name in hmm_db_info:
-        hit_info["hmm_description"] = hmm_db_info[best_hit.ta_name][
-            "supplementary_info"
-        ]
-
-    return hit_info
 
 
 def _summarise_ta_hits_simple(
-    ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str]]
+    ta_hits: List[TaHit],
+    hmm_db_info: Dict[str, Dict[str, str]],
+    detailed: bool = False,
 ) -> Dict[str, Any]:
-    """Return gene type and the single best HMM hit across all database sources."""
+    """Return gene type and the single best HMM hit across all database sources.
+
+    In detailed mode, all Pfam columns of the best hit are included; otherwise
+    only the closest Pfam family name and the list of all significant Pfam hits.
+    """
     best_hit = min(ta_hits, key=lambda hit: hit.evalue)
     info = hmm_db_info.get(best_hit.ta_name, {})
     return {
@@ -95,13 +146,13 @@ def _summarise_ta_hits_simple(
         "hmm_evalue": best_hit.evalue,
         "hmm_source": info.get("source"),
         "hmm_description": info.get("supplementary_info"),
+        **get_pfam_info(info, None if detailed else PFAM_DEFAULT_COLUMNS),
     }
 
 
 def summarise_ta_hits(ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str]]):
-
-    best_hit = min(ta_hits, key=lambda hit: hit.evalue)
-    gene_type = hmm_db_info[best_hit.ta_name]["type"]
+    """Detailed hit summary: the best hit across all sources (with all Pfam
+    columns), followed by the best hit of each source (TASmania, Other, TADB3)."""
 
     tadb_hits = [
         ta_hit
@@ -130,15 +181,62 @@ def summarise_ta_hits(ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str
 
     best_other_hit = get_best_hit(other_hits, hmm_db_info)
 
-    hit_info: Dict[str, Any] = {
-        "gene_type": gene_type,
-    }
+    hit_info: Dict[str, Any] = _summarise_ta_hits_simple(
+        ta_hits, hmm_db_info, detailed=True
+    )
 
     hit_info.update({f"TASmania_{k}": v for k, v in best_tasmania_hit.items()})
     hit_info.update({f"Other_{k}": v for k, v in best_other_hit.items()})
     hit_info.update({f"TADB3_{k}": v for k, v in best_tadb3_hit.items()})
 
     return hit_info
+
+
+def _hit_columns(detailed: bool) -> List[str]:
+    """Columns of the HMM hit summary of a gene, in output order."""
+    summarise = summarise_ta_hits if detailed else _summarise_ta_hits_simple
+    return list(summarise([TaHit("", "", 0.0, 0.0)], {}).keys())
+
+
+def _score_columns(detailed: bool) -> List[str]:
+    """Columns of the score of a TA system or pair, in output order."""
+    return [k for k in _SCORE_NULL_FULL if detailed or k not in _SCORE_DETAIL_KEYS]
+
+
+def gene_output_columns(detailed: bool = False, with_score: bool = True) -> List[str]:
+    """Columns of the gene output file, in output order."""
+    columns = [
+        "contig_name",
+        "gene_id",
+        "start",
+        "end",
+        "strand",
+        "length_aa",
+        "product",
+        "ta_system_id",
+        "is_single_gene",
+    ]
+    columns += _hit_columns(detailed)
+    if with_score:
+        columns += _score_columns(detailed)
+    return columns
+
+
+def pair_output_columns(detailed: bool = False) -> List[str]:
+    """Columns of the pairs output file, in output order."""
+    hit_columns = _hit_columns(detailed)
+    columns = ["ta_system_id", "contig_name"]
+    for role in ("toxin", "antitoxin"):
+        columns += [
+            f"{role}_{col}"
+            for col in ("gene_id", "start", "end", "strand", "product", "length_aa")
+        ]
+        columns += [f"{role}_{col}" for col in hit_columns]
+    columns.append("intergenic_distance")
+    columns += _score_columns(detailed)
+    if not detailed:
+        columns = [col for col in columns if col not in _PAIRS_DETAIL_KEYS]
+    return columns
 
 
 def write_gene_with_ta_annotation(
@@ -163,8 +261,15 @@ def write_gene_with_ta_annotation(
         if detailed
         else {k: v for k, v in _SCORE_NULL_FULL.items() if k not in _SCORE_DETAIL_KEYS}
     )
+    # The header is written even when no gene has a TA hit, so that the
+    # output file can always be read as a table.
     with open(output_file, "w", newline="") as fl:
-        writer = None
+        writer = csv.DictWriter(
+            fl,
+            fieldnames=gene_output_columns(detailed, with_score=ref_stats is not None),
+            delimiter="\t",
+        )
+        writer.writeheader()
         for contig_name, cdss in contig_name_and_cdss_with_ta_hit:
             for cds in cdss:
 
@@ -175,7 +280,7 @@ def write_gene_with_ta_annotation(
                 ta_gene_info["start"] = cds.start
                 ta_gene_info["end"] = cds.stop
                 ta_gene_info["strand"] = cds.strand.value
-                ta_gene_info["length_aa"] = (cds.stop - cds.start + 1) // 3
+                ta_gene_info["length_aa"] = cds.length_aa
                 ta_gene_info["product"] = cds.product
 
                 if cds.ta_cluster:
@@ -217,12 +322,6 @@ def write_gene_with_ta_annotation(
                     else:
                         ta_gene_info.update(_score_null)
 
-                if writer is None:
-                    writer = csv.DictWriter(
-                        fl, fieldnames=ta_gene_info.keys(), delimiter="\t"
-                    )
-                    writer.writeheader()
-
                 writer.writerow(ta_gene_info)
 
     logger.info(f"Finished writing genes with TA annotations to file '{output_file}'")
@@ -261,7 +360,10 @@ def write_pairs_with_ta_annotation(
     skipped = 0
 
     with open(output_file, "w", newline="") as fl:
-        writer = None
+        writer = csv.DictWriter(
+            fl, fieldnames=pair_output_columns(detailed), delimiter="\t"
+        )
+        writer.writeheader()
 
         for cluster_id, cluster in sorted(clusters.items()):
             genes = list(cluster.genes)
@@ -279,8 +381,8 @@ def write_pairs_with_ta_annotation(
                 contig_name = toxin.contig_id
 
                 # Structural features
-                toxin_length_aa = (toxin.stop - toxin.start + 1) // 3
-                antitoxin_length_aa = (antitoxin.stop - antitoxin.start + 1) // 3
+                toxin_length_aa = toxin.length_aa
+                antitoxin_length_aa = antitoxin.length_aa
 
                 upstream = toxin if toxin.start <= antitoxin.start else antitoxin
                 downstream = antitoxin if toxin.start <= antitoxin.start else toxin
@@ -342,10 +444,6 @@ def write_pairs_with_ta_annotation(
 
                 if not detailed:
                     row = {k: v for k, v in row.items() if k not in _PAIRS_DETAIL_KEYS}
-
-                if writer is None:
-                    writer = csv.DictWriter(fl, fieldnames=row.keys(), delimiter="\t")
-                    writer.writeheader()
 
                 writer.writerow(row)
                 pairs_written += 1
