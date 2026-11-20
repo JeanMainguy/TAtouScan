@@ -1,6 +1,6 @@
 from pathlib import Path
 import pytest
-from tatouscan.parser import get_cdss_from_gff_file
+from tatouscan.parser import get_cdss_from_gff_file, parse_gff_attributes
 
 
 @pytest.fixture
@@ -111,3 +111,30 @@ def test_parse_gff_file_with_undefined_strand(gff_file: Path):
 
     with pytest.raises(ValueError, match="expected '\\+' or '-'"):
         list(get_cdss_from_gff_file(gff_file=gff_file))
+
+
+def test_parse_gff_attributes_decodes_percent_encoding():
+    attributes = parse_gff_attributes(
+        "ID=cds1;product=toxin%2C RelE%2FParE family%3B type II;Note=50%25 identity"
+    )
+
+    assert attributes["ID"] == "cds1"
+    assert attributes["PRODUCT"] == "toxin, RelE/ParE family; type II"
+    assert attributes["NOTE"] == "50% identity"
+
+
+def test_parse_gff_attributes_keeps_unescaped_equal_sign():
+    attributes = parse_gff_attributes("ID=cds1;product=toxin a=b")
+
+    assert attributes["PRODUCT"] == "toxin a=b"
+
+
+def test_parse_gff_file_decodes_product(gff_file: Path):
+    with open(gff_file, "a") as fh:
+        fh.write(
+            "contig2	Prodigal:2.6	CDS	200	300	.	+	0	ID=cds5;product=toxin%2C RelE family\n"
+        )
+
+    contig_name_and_cdss = dict(get_cdss_from_gff_file(gff_file=gff_file))
+
+    assert contig_name_and_cdss["contig2"][-1].product == "toxin, RelE family"
