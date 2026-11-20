@@ -1,7 +1,6 @@
-from typing import Optional
+from typing import Annotated, Optional
 
 import typer
-from typing_extensions import Annotated
 
 from tatouscan import __version__
 from rich.logging import RichHandler

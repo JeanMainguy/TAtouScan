@@ -30,17 +30,25 @@ classifiers=[
     "Typing :: Typed",
     ]
 
-license = {file="LICENCE"}
+license = {file="LICENSE"}
 
 requires-python = ">=3.10"
 dependencies = [
-    "pyfastx>=2.0.0,<3.0.0",
-    "typer>=0.15.0,<0.16.0",
+    "typer>=0.15.0",
+    "rich",
     "pyhmmer>=0.11.0,<0.12.0"
 ]
 
 
 [project.optional-dependencies]
+
+# Scripts in build_reference/ used to build the reference database
+build_reference = [
+    "pyfastx>=2.0.0,<3.0.0",
+    "pandas",
+    "plotly",
+    "scipy",
+]
 
 doc = [
     "sphinx==6.2.1",
@@ -64,7 +72,7 @@ dev = [
 #
 [project.urls]
 Repository = "https://github.com/JeanMainguy/TAtouScan"
-Changelog = "https://github.com/JeanMainguy/TAtouScan/CHANGELOG.md"
+Changelog = "https://github.com/JeanMainguy/TAtouScan/blob/main/CHANGELOG.md"
 Documentation = "https://tatouscan.readthedocs.io"
 #
 #
