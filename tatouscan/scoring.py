@@ -273,9 +273,9 @@ def score_pair(
     known_pairs: Optional[KnownPairs] = None,
 ) -> Dict[str, Any]:
     """Score a single (toxin, antitoxin) gene pair."""
-    # Protein length in amino acids from 1-based inclusive nucleotide coordinates
-    toxin_size = (toxin.stop - toxin.start + 1) // 3
-    at_size = (antitoxin.stop - antitoxin.start + 1) // 3
+    # Protein length in amino acids (from the protein sequence when known)
+    toxin_size = toxin.length_aa
+    at_size = antitoxin.length_aa
 
     # Intergenic distance (negative = overlap), matching reference formula:
     # downstream.genomic_left − upstream.genomic_right

@@ -43,7 +43,9 @@ def annotate_sequences_from_faa_file(
     :params hmm_db: Path to a HMM database.
     :params e_value_threshold: E-value threshold for hits. Default is 0.01.
 
-    :returns: A dictionary with protein ids as keys and a list of TaHit objects as values.
+    :returns: A tuple of two dictionaries keyed by protein id: the list of TaHit
+        objects of each protein with hits, and the length in amino acids of these
+        proteins (trailing stop codon ``*`` excluded).
     """
 
     hmms = load_hmm_db(hmm_db)
@@ -78,7 +80,26 @@ def annotate_sequences_from_faa_file(
         logger.info(f"Identified {len(protein_id_to_hits)} proteins with TA hits")
         logger.info("TA hit search completed successfully")
 
-    return protein_id_to_hits
+    protein_id_to_length = get_protein_lengths(proteins, set(protein_id_to_hits))
+
+    return protein_id_to_hits, protein_id_to_length
+
+
+def get_protein_lengths(
+    proteins: pyhmmer.easel.DigitalSequenceBlock, protein_ids: Set[str]
+) -> Dict[str, int]:
+    """Return the length in amino acids of the proteins in *protein_ids*.
+
+    A trailing stop codon (``*``, written by Prodigal for instance) is not
+    counted, so lengths match the protein lengths of the reference statistics.
+    """
+    protein_id_to_length: Dict[str, int] = {}
+    for protein in proteins:
+        protein_id = protein.name.decode()
+        if protein_id in protein_ids:
+            sequence = protein.textize().sequence
+            protein_id_to_length[protein_id] = len(sequence.rstrip("*"))
+    return protein_id_to_length
 
 
 def annotate_cdss(
@@ -89,7 +110,7 @@ def annotate_cdss(
     matching_attributes: list[str] = ["id", "protein_id", "name", "locus_tag"],
 ):
 
-    protein_id_to_hits = annotate_sequences_from_faa_file(
+    protein_id_to_hits, protein_id_to_length = annotate_sequences_from_faa_file(
         faa_file=faa_file, hmm_db=hmm_db, e_value_threshold=e_value_threshold
     )
     cds_from_gff_with_hits: List[Cds] = []
@@ -100,6 +121,7 @@ def annotate_cdss(
             for attribute in matching_attributes:
                 if getattr(cds, attribute) in protein_id_to_hits:
                     cds.ta_hits = protein_id_to_hits[getattr(cds, attribute)]
+                    cds.protein_length = protein_id_to_length[getattr(cds, attribute)]
                     cds_from_gff_with_hits.append(cds)
                     matching_ids.add(getattr(cds, attribute))
                     break

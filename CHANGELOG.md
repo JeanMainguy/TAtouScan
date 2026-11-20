@@ -22,11 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `--detailed` no longer crashes (KeyError) when the best hit is a profile missing from `hmm_info.tsv`.
 - Database: 8 TASmania toxin profiles present in `ta.hmm` (T.15176, T.19492, T.22965, T.27775, T.47550, T.47564, T.48632, T.62570; GhoT_OrtT family) were missing from `hmm_info.tsv`, so genes hitting them had no gene type.
-<<<<<<< HEAD
 - **Scoring**: when several toxin–antitoxin pairs in a cluster tie on score, the reported pair (and its `pair_is_known` value) is now chosen by genomic position instead of set iteration order, so results are reproducible across runs on the same data.
-=======
 - **GFF parsing**: GFF files with a `##FASTA` section (default output of Prokka and Bakta), blank lines, or a CDS phase of `.` no longer crash TAtouScan. Lines without 9 columns and CDSs with a strand other than `+` or `-` now raise an error that gives the line number.
->>>>>>> ce8772b (Fix GFF parsing crashes on common GFF variants)
+- **Protein length**: `length_aa` (and the toxin and antitoxin sizes used for scoring) is now the length of the protein sequence in the FAA file, with any trailing `*` removed. It was previously computed from the GFF coordinates, which counted the stop codon, so lengths were 1 aa too long and size Z-scores were slightly shifted compared with the reference statistics. Scores can change slightly.
 
 ## [0.2.0] – 2026-05-07
 

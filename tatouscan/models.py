@@ -111,8 +111,22 @@ class Cds(Gene):
         self.protein_id = protein_id
         self.digit_sequence = digit_sequence
         self.ta_hits: List[TaHit] = []
+        # Protein length in amino acids, taken from the protein FASTA file.
+        self.protein_length: Optional[int] = None
         self.neighbor_genes: List["Cds"] = []
         self.ta_cluster: GeneCluster | None = None
+
+    @property
+    def length_aa(self) -> int:
+        """Protein length in amino acids.
+
+        Uses the length of the protein sequence when known. Otherwise it is
+        estimated from the coordinates, which counts the stop codon when the
+        CDS has one.
+        """
+        if self.protein_length is not None:
+            return self.protein_length
+        return (self.stop - self.start + 1) // 3
 
     def __repr__(self):
         return f"CDS(name={self.id}, coordinates={self.coordinates}, strand={self.strand}, protein_id={self.protein_id})"
