@@ -29,11 +29,12 @@ pip install TAtouScan
 ### Download the TAtouScan Database
 
 TAtouScan requires a database directory containing HMM profiles and reference statistics.
+The database is distributed on Zenodo: [doi.org/10.5281/zenodo.15305312](https://doi.org/10.5281/zenodo.15305312)
 
 
-Download the database and extract it with:
+Download the current version (0.3.0) and extract it with:
 ```bash
-wget https://zenodo.org/records/20059258/files/tatouscan_db.tar.gz
+wget https://zenodo.org/records/24379358/files/tatouscan_db.tar.gz
 tar -xzf tatouscan_db.tar.gz
 ```
 
@@ -148,7 +149,7 @@ One row per predicted toxin or antitoxin gene.
 | `hmm_name` / `hmm_score` / `hmm_evalue` | Best HMM hit across all database sources |
 | `hmm_source` | Database the best hit comes from (`TADB3`, `TASmania`, or other) |
 | `hmm_description` | Profile description |
-| `hmm_pfam_accession` / `hmm_pfam_name` / `hmm_pfam_description` | Closest Pfam family of the best HMM profile (see [Pfam annotation](#pfam-annotation-of-the-hmm-profiles)) |
+| `hmm_pfam_name` | Closest Pfam family of the best HMM profile (see [Pfam annotation](#pfam-annotation-of-the-hmm-profiles)) |
 | `hmm_pfam_hits` | All significant Pfam families of the best HMM profile (`NAME(ACCESSION):E-value:positions;…`) |
 | `pair_is_known` | `1` if this toxin–antitoxin family combination is known in TADB3, `0` if not, `None` if family could not be identified |
 | `score` | Unified match score in `(0, 1]` (see [Scoring](#scoring)) |
@@ -168,22 +169,23 @@ One row per predicted toxin–antitoxin pair. For systems with more than one tox
 | `toxin_product` | Predicted gene product |
 | `toxin_length_aa` | Toxin protein length in amino acids |
 | `toxin_hmm_name` / `_score` / `_evalue` / `_source` / `_description` | Best HMM hit for the toxin |
-| `toxin_hmm_pfam_accession` / `_name` / `_description` / `_hits` | Pfam annotation of the toxin best HMM profile |
+| `toxin_hmm_pfam_name` / `_hits` | Pfam annotation of the toxin best HMM profile |
 | `antitoxin_gene_id` | Antitoxin gene identifier |
 | `antitoxin_strand` | `+` or `-` |
 | `antitoxin_product` | Predicted gene product |
 | `antitoxin_length_aa` | Antitoxin protein length in amino acids |
 | `antitoxin_hmm_name` / `_score` / `_evalue` / `_source` / `_description` | Best HMM hit for the antitoxin |
-| `antitoxin_hmm_pfam_accession` / `_name` / `_description` / `_hits` | Pfam annotation of the antitoxin best HMM profile |
+| `antitoxin_hmm_pfam_name` / `_hits` | Pfam annotation of the antitoxin best HMM profile |
 | `intergenic_distance` | Distance in nucleotides between the two genes (negative = overlap) |
 | `pair_is_known` | `1` / `0` / `None` (see above) |
 | `score` | Unified match score in `(0, 1]` |
 
 ### Detailed output
 
-With `--detailed`, the following additional columns are written to both files:
+With `--detailed`, all default columns are kept and the following additional columns are written to both files (prefixed with `toxin_` / `antitoxin_` in the pairs file):
 
-- **Per-source HMM hits**: `TASmania_hmm_name/score/evalue/description`, `TADB3_hmm_name/score/evalue/description`, `Other_hmm_name/score/evalue/description`, each with its Pfam annotation `*_hmm_pfam_accession/name/description/hits` (prefixed with `toxin_` / `antitoxin_` in the pairs file)
+- **Pfam details of the best HMM profile**: `hmm_pfam_accession`, `hmm_pfam_description`
+- **Per-source HMM hits**: `TASmania_hmm_name/score/evalue/description/pfam_name`, `TADB3_hmm_name/score/evalue/description/pfam_name`, `Other_hmm_name/score/evalue/description/pfam_name`
 - **Raw Z-scores**: `toxin_size_z`, `at_size_z`, `intergenic_distance_z`, `matched_family`, `n_reference_pairs`
 
 The pairs file also adds `toxin_start/end` and `antitoxin_start/end` in detailed mode.
