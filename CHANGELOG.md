@@ -17,9 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Breaking**: TAtouScan now requires database version ≥ 0.3.0. Databases released before 0.3.0 (without `version.txt`) are rejected.
 - `--detailed` output is now a superset of the default output: the best hit across all sources (`hmm_name`, `hmm_score`, `hmm_evalue`, `hmm_source`, `hmm_description`) is kept, and the per-source columns are added after it. Previously these columns were replaced by the per-source ones.
+- **Packaging**: `pyfastx` is no longer installed with TAtouScan. It is only used by the scripts that build the reference database, and moved with their other dependencies (`pandas`, `plotly`, `scipy`) to the optional `build_reference` group: `pip install "TAtouScan[build_reference]"`. The `typer` upper bound (`<0.16`) is removed, and `rich`, which TAtouScan imports directly, is now a declared dependency.
 
 ### Fixed
 
+- Package metadata: the Changelog link on PyPI pointed to a missing page, and the license file name was misspelled (`LICENCE`), leaving the license field empty.
 - `--detailed` no longer crashes (KeyError) when the best hit is a profile missing from `hmm_info.tsv`.
 - Database: 8 TASmania toxin profiles present in `ta.hmm` (T.15176, T.19492, T.22965, T.27775, T.47550, T.47564, T.48632, T.62570; GhoT_OrtT family) were missing from `hmm_info.tsv`, so genes hitting them had no gene type.
 - **Scoring**: when several toxin–antitoxin pairs in a cluster tie on score, the reported pair (and its `pair_is_known` value) is now chosen by genomic position instead of set iteration order, so results are reproducible across runs on the same data.
