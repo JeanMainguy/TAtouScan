@@ -243,7 +243,10 @@ def score_cluster(
         "score": None,
     }
 
-    genes = list(cluster.genes)
+    # cluster.genes is a set whose iteration order depends on object hashes, so
+    # sort by genomic position to make tie-breaking between equally scored
+    # pairs (and hence pair_is_known) reproducible across runs.
+    genes = sorted(cluster.genes, key=lambda g: (g.contig_id, g.start, g.stop, g.id))
     types = [get_gene_type(g, hmm_db_info) for g in genes]
     toxins: List[Cds] = [g for g, t in zip(genes, types) if t == "Toxin"]
     antitoxins: List[Cds] = [g for g, t in zip(genes, types) if t == "Antitoxin"]
