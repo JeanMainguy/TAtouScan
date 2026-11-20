@@ -6,6 +6,7 @@ from tatouscan.database import (
     DB_FILENAMES,
     MIN_DB_VERSION,
     VERSION_FILENAME,
+    DatabaseError,
     DatabaseVersionError,
     check_db_version,
     load_db,
@@ -66,3 +67,19 @@ def test_load_db_missing_file(tmp_path: Path):
     (db / "known_pairs.tsv").unlink()
     with pytest.raises(FileNotFoundError, match="known_pairs.tsv"):
         load_db(db)
+
+
+def test_load_db_missing_file_is_a_database_error(tmp_path: Path):
+    db = make_db(tmp_path)
+    (db / "ta.hmm").unlink()
+    with pytest.raises(DatabaseError, match="ta.hmm"):
+        load_db(db)
+
+
+def test_load_db_file_instead_of_directory(tmp_path: Path):
+    archive = tmp_path / "tatouscan_db.tar.gz"
+    archive.write_text("")
+    with pytest.raises(DatabaseError, match="extract it first"):
+        load_db(archive)
+    with pytest.raises(NotADirectoryError):
+        load_db(archive)

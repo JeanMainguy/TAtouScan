@@ -44,8 +44,20 @@ DB_FILENAMES: dict[str, str] = {
 }
 
 
-class DatabaseVersionError(Exception):
+class DatabaseError(Exception):
+    """Base class of the errors raised when a TAtouScan database cannot be used."""
+
+
+class DatabaseVersionError(DatabaseError):
     """Raised when the database is missing a version or is too old."""
+
+
+class DatabaseNotADirectoryError(DatabaseError, NotADirectoryError):
+    """Raised when the database path does not exist or is not a directory."""
+
+
+class DatabaseFileNotFoundError(DatabaseError, FileNotFoundError):
+    """Raised when a required file is missing from the database directory."""
 
 
 @dataclass(frozen=True)
@@ -114,17 +126,19 @@ def load_db(path: Path) -> TAtouScanDB:
 
     Raises
     ------
-    NotADirectoryError
+    DatabaseNotADirectoryError
         If *path* does not exist or is not a directory.
     DatabaseVersionError
         If the database has no version file or is older than ``MIN_DB_VERSION``.
-    FileNotFoundError
+    DatabaseFileNotFoundError
         If any of the required files is missing from the directory.
+
+    All these errors are subclasses of :class:`DatabaseError`.
     """
     if not path.exists():
-        raise NotADirectoryError(f"Database path does not exist: {path}")
+        raise DatabaseNotADirectoryError(f"Database path does not exist: {path}")
     if not path.is_dir():
-        raise NotADirectoryError(
+        raise DatabaseNotADirectoryError(
             f"--db must point to a directory (not a file): {path}\n"
             "If you have a .tar.gz archive, extract it first: tar -xzf <archive>"
         )
@@ -133,7 +147,7 @@ def load_db(path: Path) -> TAtouScanDB:
 
     missing = [fname for fname in DB_FILENAMES.values() if not (path / fname).exists()]
     if missing:
-        raise FileNotFoundError(
+        raise DatabaseFileNotFoundError(
             f"TAtouScan database at '{path}' is missing required file(s): "
             + ", ".join(missing)
             + f"\nExpected: {', '.join(DB_FILENAMES.values())}"
