@@ -50,6 +50,56 @@ _SCORE_NULL_FULL: Dict[str, Any] = {
 }
 
 
+# Pfam annotation of the HMM profiles (output columns, in output order).
+# Empty values (profile without significant Pfam hit) are written as None.
+#   hmm_pfam_name         closest Pfam family            (hmm_info.tsv: pfam_name)
+#   hmm_pfam_families     all significant family names   (derived from pfam_hits)
+#   hmm_pfam_accession    closest family accession       (hmm_info.tsv: pfam_accession)
+#   hmm_pfam_description  closest family description     (hmm_info.tsv: pfam_description)
+#   hmm_pfam_hits         all significant families with  (hmm_info.tsv: pfam_hits)
+#                         E-values and positions
+PFAM_INFO_COLUMNS: tuple[str, ...] = (
+    "hmm_pfam_name",
+    "hmm_pfam_families",
+    "hmm_pfam_accession",
+    "hmm_pfam_description",
+    "hmm_pfam_hits",
+)
+
+# Pfam columns written for the best hit in default output; the others are --detailed only.
+PFAM_DEFAULT_COLUMNS: frozenset[str] = frozenset({"hmm_pfam_name", "hmm_pfam_families"})
+
+# Pfam columns written for each per-source best hit (--detailed only).
+PFAM_PER_SOURCE_COLUMNS: frozenset[str] = frozenset({"hmm_pfam_name"})
+
+
+def pfam_family_names(pfam_hits: str) -> str:
+    """Reduce ``NAME(ACC):E-value:positions;...`` to ``NAME;...``."""
+    return ";".join(hit.split("(", 1)[0] for hit in pfam_hits.split(";") if hit)
+
+
+def get_pfam_info(
+    info: Dict[str, str], columns: Optional[frozenset[str]] = None
+) -> Dict[str, Optional[str]]:
+    """Return the Pfam annotation of an HMM profile from its hmm_info.tsv row.
+
+    :param columns: output columns to keep (all Pfam columns if None).
+    """
+    pfam_hits = info.get("pfam_hits") or ""
+    values = {
+        "hmm_pfam_name": info.get("pfam_name"),
+        "hmm_pfam_families": pfam_family_names(pfam_hits),
+        "hmm_pfam_accession": info.get("pfam_accession"),
+        "hmm_pfam_description": info.get("pfam_description"),
+        "hmm_pfam_hits": pfam_hits,
+    }
+    return {
+        col: values[col] or None
+        for col in PFAM_INFO_COLUMNS
+        if columns is None or col in columns
+    }
+
+
 def get_best_hit(ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str]]):
     """
     Get the best hit from a list of TaHit objects.
@@ -61,31 +111,32 @@ def get_best_hit(ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str]]):
             "hmm_score": None,
             "hmm_evalue": None,
             "hmm_description": None,
+            **get_pfam_info({}, PFAM_PER_SOURCE_COLUMNS),
         }
 
     # Sort hits by e-value and return the first one
     best_hit = min(ta_hits, key=lambda hit: hit.evalue)
+    info = hmm_db_info.get(best_hit.ta_name, {})
 
-    hit_info: Dict[str, Any] = {
+    return {
         "hmm_name": best_hit.ta_name,
         "hmm_score": best_hit.score,
         "hmm_evalue": best_hit.evalue,
-        "hmm_description": None,
+        "hmm_description": info.get("supplementary_info"),
+        **get_pfam_info(info, PFAM_PER_SOURCE_COLUMNS),
     }
-
-    # Merge in additional metadata from hmm_db_info using ta_name as key
-    if best_hit.ta_name in hmm_db_info:
-        hit_info["hmm_description"] = hmm_db_info[best_hit.ta_name][
-            "supplementary_info"
-        ]
-
-    return hit_info
 
 
 def _summarise_ta_hits_simple(
-    ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str]]
+    ta_hits: List[TaHit],
+    hmm_db_info: Dict[str, Dict[str, str]],
+    detailed: bool = False,
 ) -> Dict[str, Any]:
-    """Return gene type and the single best HMM hit across all database sources."""
+    """Return gene type and the single best HMM hit across all database sources.
+
+    In detailed mode, all Pfam columns of the best hit are included; otherwise
+    only the closest Pfam family name and the list of all significant Pfam hits.
+    """
     best_hit = min(ta_hits, key=lambda hit: hit.evalue)
     info = hmm_db_info.get(best_hit.ta_name, {})
     return {
@@ -95,13 +146,13 @@ def _summarise_ta_hits_simple(
         "hmm_evalue": best_hit.evalue,
         "hmm_source": info.get("source"),
         "hmm_description": info.get("supplementary_info"),
+        **get_pfam_info(info, None if detailed else PFAM_DEFAULT_COLUMNS),
     }
 
 
 def summarise_ta_hits(ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str]]):
-
-    best_hit = min(ta_hits, key=lambda hit: hit.evalue)
-    gene_type = hmm_db_info[best_hit.ta_name]["type"]
+    """Detailed hit summary: the best hit across all sources (with all Pfam
+    columns), followed by the best hit of each source (TASmania, Other, TADB3)."""
 
     tadb_hits = [
         ta_hit
@@ -130,9 +181,9 @@ def summarise_ta_hits(ta_hits: List[TaHit], hmm_db_info: Dict[str, Dict[str, str
 
     best_other_hit = get_best_hit(other_hits, hmm_db_info)
 
-    hit_info: Dict[str, Any] = {
-        "gene_type": gene_type,
-    }
+    hit_info: Dict[str, Any] = _summarise_ta_hits_simple(
+        ta_hits, hmm_db_info, detailed=True
+    )
 
     hit_info.update({f"TASmania_{k}": v for k, v in best_tasmania_hit.items()})
     hit_info.update({f"Other_{k}": v for k, v in best_other_hit.items()})

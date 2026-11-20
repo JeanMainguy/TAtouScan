@@ -12,7 +12,7 @@ from tatouscan.annotation import annotate_cdss, parse_hmm_db_info
 from tatouscan.system import group_cdss_with_ta_annotation
 from tatouscan.writer import write_gene_with_ta_annotation
 from tatouscan.scoring import load_reference_statistics, load_known_pairs
-from tatouscan.database import load_db
+from tatouscan.database import DatabaseVersionError, load_db
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +126,12 @@ def main(
     )
     cds_protein_attr = ["id", "protein_id", "name", "locus_tag"]
 
-    tatouscan_db = load_db(db)
+    try:
+        tatouscan_db = load_db(db)
+    except DatabaseVersionError as error:
+        logger.error(error)
+        raise typer.Exit(code=1)
+    logger.info(f"Using TAtouScan database version {tatouscan_db.version} ('{db}')")
 
     contig_name_and_cdss = annotate_cdss(
         gff_file=gff,
