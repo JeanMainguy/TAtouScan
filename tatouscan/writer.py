@@ -51,8 +51,7 @@ _SCORE_NULL_FULL: Dict[str, Any] = {
 
 
 # Pfam annotation of the HMM profiles: output column -> hmm_info.tsv column.
-# These columns are optional in hmm_info.tsv (absent from databases built before
-# the Pfam annotation); missing or empty values are written as None.
+# Empty values (profile without significant Pfam hit) are written as None.
 PFAM_INFO_COLUMNS: Dict[str, str] = {
     "hmm_pfam_accession": "pfam_accession",
     "hmm_pfam_name": "pfam_name",

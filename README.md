@@ -37,15 +37,22 @@ wget https://zenodo.org/records/20059258/files/tatouscan_db.tar.gz
 tar -xzf tatouscan_db.tar.gz
 ```
 
-The database directory must contain the following four files:
+The database directory must contain the following five files:
 
 ```
 tatouscan_db/
+  version.txt            # database version, checked at startup
   ta.hmm                 # HMM profiles (HMMER3 format)
   hmm_info.tsv           # profile metadata (name, type, source, Pfam annotation)
   family_statistics.tsv  # per-family reference statistics for scoring
   known_pairs.tsv        # known toxin–antitoxin family co-occurrences
 ```
+
+> [!IMPORTANT]
+> TAtouScan checks the database version at startup and stops if the database is too old.
+> TAtouScan ≥ 0.3.0 requires database version ≥ 0.3.0. Databases released before 0.3.0 (without
+> `version.txt`) are not supported anymore: download the latest version from
+> [Zenodo](https://doi.org/10.5281/zenodo.15305312).
 
 ### Pfam annotation of the HMM profiles
 
@@ -62,7 +69,6 @@ families with a full-sequence E-value ≤ 1e-3 are kept. This adds the following
 
 Several Pfam families are often reported for one profile: either several domains of a multi-domain
 protein (different positions) or closely related families of the same clan (overlapping positions).
-Databases released before the Pfam annotation are still supported; the Pfam output columns are then empty.
 
 
 ## Usage
