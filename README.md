@@ -1,29 +1,38 @@
-[![PyPI version](https://badge.fury.io/py/TAtouScan.svg?cache-control=no-cache)](https://badge.fury.io/py/TAtouScan)
-
 # TAtouScan
+
+[![PyPI version](https://img.shields.io/pypi/v/TAtouScan?label=PyPI)](https://pypi.org/project/TAtouScan/)
+[![Bioconda](https://img.shields.io/conda/vn/bioconda/tatouscan?label=bioconda)](https://anaconda.org/bioconda/tatouscan)
+[![Python versions](https://img.shields.io/pypi/pyversions/TAtouScan)](https://pypi.org/project/TAtouScan/)
+[![CI](https://github.com/JeanMainguy/TAtouScan/actions/workflows/tatouscan_ci.yml/badge.svg)](https://github.com/JeanMainguy/TAtouScan/actions/workflows/tatouscan_ci.yml)
+[![Lint](https://github.com/JeanMainguy/TAtouScan/actions/workflows/black_lint.yml/badge.svg)](https://github.com/JeanMainguy/TAtouScan/actions/workflows/black_lint.yml)
+[![Database DOI](https://img.shields.io/badge/database%20DOI-10.5281%2Fzenodo.15305312-blue)](https://doi.org/10.5281/zenodo.15305312)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **TAtouScan** is a command-line tool designed to identify **toxin-antitoxin (TA) systems** in genomes and metagenomes. 
 
 
 ## Installation
 
-TAtouScan is available on [PyPI](https://pypi.org/project/TAtouScan/). It is recommended to install it in a virtual environment:
+TAtouScan is available on [Bioconda](https://anaconda.org/bioconda/tatouscan) and [PyPI](https://pypi.org/project/TAtouScan/).
+
+### With conda (recommended)
+
+```bash
+conda create -n tatouscan -c conda-forge -c bioconda tatouscan
+conda activate tatouscan
+```
+
+`mamba` can be used in place of `conda` for faster dependency resolution.
+
+### With pip
+
+It is recommended to install it in a virtual environment:
 
 ```bash
 python -m venv tatouscan-env
 source tatouscan-env/bin/activate
 pip install TAtouScan
 ```
-
-Alternatively, using `conda` for environment management:
-
-```bash
-conda create -n tatouscan python=3.12
-conda activate tatouscan
-pip install TAtouScan
-```
-> [!NOTE]
-> TAtouScan is not yet available via `bioconda`. The above method combines `conda` for environment management and `pip` for installation.
 
 
 ### Download the TAtouScan Database
