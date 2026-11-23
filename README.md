@@ -4,7 +4,6 @@
 [![Bioconda](https://img.shields.io/conda/vn/bioconda/tatouscan?label=bioconda)](https://anaconda.org/bioconda/tatouscan)
 [![Python versions](https://img.shields.io/pypi/pyversions/TAtouScan)](https://pypi.org/project/TAtouScan/)
 [![CI](https://github.com/JeanMainguy/TAtouScan/actions/workflows/tatouscan_ci.yml/badge.svg)](https://github.com/JeanMainguy/TAtouScan/actions/workflows/tatouscan_ci.yml)
-[![Lint](https://github.com/JeanMainguy/TAtouScan/actions/workflows/black_lint.yml/badge.svg)](https://github.com/JeanMainguy/TAtouScan/actions/workflows/black_lint.yml)
 [![Database DOI](https://img.shields.io/badge/database%20DOI-10.5281%2Fzenodo.15305312-blue)](https://doi.org/10.5281/zenodo.15305312)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -21,8 +20,6 @@ TAtouScan is available on [Bioconda](https://anaconda.org/bioconda/tatouscan) an
 conda create -n tatouscan -c conda-forge -c bioconda tatouscan
 conda activate tatouscan
 ```
-
-`mamba` can be used in place of `conda` for faster dependency resolution.
 
 ### With pip
 
